@@ -13,7 +13,7 @@ CREATE TABLE flc_content (
     description text
 );
 
-create index flc_content_id_idx on flc_content (id);
+create index flc_content_content_id_idx on flc_content (content_id);
 
 CREATE TABLE flc_card_stack (
      stack_id integer not null primary key,
