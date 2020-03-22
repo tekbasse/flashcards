@@ -1,1 +1,0 @@
-\copy  from '[acs_root_dir]/packages/flashcards/sql/common/cybersec-terms.dat' delimiter ';' null as ''
