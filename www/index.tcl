@@ -11,11 +11,11 @@ if { $read_p } {
 
     set stats_lol [db_list_of_lists flc_user_stats_r {
 	select stack_id,
-	    time_start,
-	    time_end,
-	    cards_completed_count,
-	    cards_remaining_count,
-	    repeats_count
+        time_start,
+        time_end,
+        cards_completed_count,
+        cards_remaining_count,
+        repeats_count
 	from flc_user_stats 
 	where instance_id=:instance_id
 	and user_id=:user_id
@@ -27,35 +27,46 @@ if { $read_p } {
 	where instance_id=:instance_id
 	order by stack_id asc } ]
 
+    set carddeck_lol [list]
+    set carddeck_attrs_list [list "\#flashcards.Flashcards\#" \
+				 "\#flashcards.Description\#" ]
     foreach stack_list $stack_lol {
 	set id [lindex $stack_list 0]
-	set name_arr($id) [lindex $stack_list 1]
-	set descr_arr($id) [lindex $stack_list 2]
+	set name_arr(${id}) [lindex $stack_list 1]
+	set descr_arr(${id}) [lindex $stack_list 2]
+	set row_list [list $name_arr(${id}) $descr_arr(${id}) ]
+	lappend carddeck_lol $row_list
     }
-
-    set table_lol [list "#flashcards.Stack#" \
-		       "#flashcards.Started#" \
-		       "#flashcards.Finished#" \
-		       "#flashcards.Completed#" \
-		       "#flashcards.Remaining#" \
-		       "#flashcards.Repeats#"]
+    
+    
+    set table_lol [list]
+    set titles_list [list "\#flashcards.Started\#" \
+			 "\#flashcards.Stack\#" \
+			 "\#flashcards.Finished\#" \
+			 "\#flashcards.Completed\#" \
+			 "\#flashcards.Remaining\#" \
+			 "\#flashcards.Repeats\#" ]
+    set table_attrs_list [list border 1]
+    lappend table_lol $titles_list
     if { [llength $stats_lol] < 1 } {
-	append table_lol [list "#flashcards.None#" "" "" "" "" ""]
-    } else {	
+	set row_list [list "#flashcards.None#" "" "" "" "" "" ]
+	lappend table_lol $row_list
+    } else {    
 	foreach stat_list $stats_lol {
 	    
 	    set stack_id [lindex $stat_list 0]
 	    set name $name_arr(${stack_id})
+
 	    set row_list [lreplace $stat_list 0 0 $name]
 	    append table_lol $row_list
 	}
     }
-    set table_html [qss_list_of_lists_to_html_table $table_lol]
+    #set table_html $table_lol
+    set table_html [qss_list_of_lists_to_html_table $table_lol $table_attrs_list]
 
     append content_html $table_html
 } else {
-    append content_html "#flashcards.permission_denied#"
+    append content_html "\#flashcards.permission_denied\#"
 }
-
 
 
