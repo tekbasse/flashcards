@@ -70,8 +70,8 @@ if { $admin_p } {
 		set card_count 0
 		foreach row_list $content_lol {
 		    lassign $row_list abbreviation term description
-		    set abbreviation [qf_abbreviate $abbreviation 40]
-		    set term [qf_abbreviate $term 80]
+		    set abbreviation [qf_abbreviate $abbreviation 37]
+		    set term [qf_abbreviate $term 190]
 		    # save content
 		    incr row_id
 		    db_dml flc_content_cr {insert into flc_content 
@@ -108,7 +108,9 @@ if { $admin_p } {
 	    if { $error_p } {
 		lappend user_message_list "There was an error importing data: '${errmsg}'"
 	    } else {
-		lappend user_message_list "Successfully imported ${rows_count} rows into ${card_count} flashcards."
+		# cards are added in sets of two, representing either side facing first.
+		set flashcard_ct [expr { $card_count / 2 } ]
+		lappend user_message_list "Successfully imported ${rows_count} rows into ${flashcard_ct} flashcards."
 	    }
 
             
