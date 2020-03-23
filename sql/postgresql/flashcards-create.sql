@@ -10,7 +10,7 @@ CREATE TABLE flc_content (
     content_id integer not null,
     instance_id integer,
     abbreviation varchar(40),
-    term varchar(80),
+    term varchar(200),
     description text
 );
 
