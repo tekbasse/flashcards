@@ -27,18 +27,23 @@ if { $read_p } {
 	where instance_id=:instance_id
 	order by stack_id asc } ]
 
-    set carddeck_lol [list]
-    set carddeck_attrs_list [list "\#flashcards.Flashcards\#" \
-				 "\#flashcards.Description\#" ]
-    foreach stack_list $stack_lol {
-	set id [lindex $stack_list 0]
-	set name_arr(${id}) [lindex $stack_list 1]
-	set descr_arr(${id}) [lindex $stack_list 2]
-	set row_list [list $name_arr(${id}) $descr_arr(${id}) ]
-	lappend carddeck_lol $row_list
+    set carddeck_lol [list [list "\#flashcards.Flashcards\#" \
+				"\#flashcards.Description\#" ]]
+    set carddeck_attrs_list [list border 1]
+    if { [llength $stack_lol] > 0 } {
+	foreach stack_list $stack_lol {
+	    set id [lindex $stack_list 0]
+	    set name_arr(${id}) [lindex $stack_list 1]
+	    set descr_arr(${id}) [lindex $stack_list 2]
+	    set row_list [list "<a href="card?stack_id=${id}">$name_arr(${id})</a>" $descr_arr(${id}) ]
+	    lappend carddeck_lol $row_list
+	}
+    } else {
+	lappend carddeck_lol [list "\#flashcards.None\#" ""]
     }
     
-    
+    set avail_decks_html [qss_list_of_lists_to_html_table $carddeck_lol $carddeck_attrs_list]
+    append content_html <br> <br> "<h3>Available decks</h3>" \n $avail_decks_html \n
     set table_lol [list]
     set titles_list [list "\#flashcards.Started\#" \
 			 "\#flashcards.Stack\#" \
@@ -49,7 +54,7 @@ if { $read_p } {
     set table_attrs_list [list border 1]
     lappend table_lol $titles_list
     if { [llength $stats_lol] < 1 } {
-	set row_list [list "#flashcards.None#" "" "" "" "" "" ]
+	set row_list [list "\#flashcards.None\#" "" "" "" "" "" ]
 	lappend table_lol $row_list
     } else {    
 	foreach stat_list $stats_lol {
@@ -61,10 +66,10 @@ if { $read_p } {
 	    append table_lol $row_list
 	}
     }
-    #set table_html $table_lol
+
     set table_html [qss_list_of_lists_to_html_table $table_lol $table_attrs_list]
 
-    append content_html $table_html
+    append content_html <br> <br> "<h3>Your history</h3>" \n $table_html \n
 } else {
     append content_html "\#flashcards.permission_denied\#"
 }
