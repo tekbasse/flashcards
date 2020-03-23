@@ -6,7 +6,8 @@ SELECT nextval ('flc_id_seq');
 
 -- For general raw input data
 CREATE TABLE flc_content (
-    content_id integer not null primary key,
+    row_id integer not null,
+    content_id integer not null,
     instance_id integer,
     abbreviation varchar(40),
     term varchar(80),
@@ -14,6 +15,7 @@ CREATE TABLE flc_content (
 );
 
 create index flc_content_content_id_idx on flc_content (content_id);
+create index flc_content_row_id_idx on flc_content (row_id);
 
 CREATE TABLE flc_card_stack (
      stack_id integer not null primary key,
@@ -28,6 +30,7 @@ CREATE TABLE flc_card_stack_card (
      stack_id integer not null,
      content_id integer not null,
      -- we only need 3 distinct references to specify both sides of a card
+     -- from a row of flc_content
      -- a = abbreviation
      -- t = term
      -- d = description

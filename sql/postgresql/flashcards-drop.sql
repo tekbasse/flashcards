@@ -14,6 +14,7 @@ DROP TABLE flc_card_stack_card;
 DROP TABLE flc_card_stack;
 
 DROP index flc_content_content_id_idx;
+DROP index flc_content_row_id_idx;
 
 DROP TABLE flc_content;
 
