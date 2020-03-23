@@ -25,9 +25,12 @@ CREATE TABLE flc_card_stack (
 );
 
 CREATE TABLE flc_card_stack_card (
-     card_id integer not null,
      instance_id integer,
+     -- card in deck references
      stack_id integer not null,
+     card_id integer not null,
+     
+     -- references to build content of card from imported data
      content_id integer not null,
      row_id integer not null,
      -- we only need 3 distinct references to specify both sides of a card
@@ -40,18 +43,26 @@ CREATE TABLE flc_card_stack_card (
 );
 
 create index flc_card_stack_card_card_id_idx on flc_card_stack_card (card_id);
+create index flc_card_stack_card_stack_id_idx on flc_card_stack_card (stack_id);
 
 CREATE TABLE flc_user_stack (
        instance_id integer,
        user_id integer,
+
+       -- references to build deck for user
+       stack_id integer,
        card_id integer,
+       
        -- shuffling done when user stack created.
        -- skip by multiples of stack size,
        -- so that there is room to insert every card inbetween,
        -- should cards get put back in stack.
        order_id integer,
-       -- done_p means remove from active stack
+
+       -- card state: done_p = 't' means remove from active stack.
        done_p boolean,
+       -- number of times the backside of a card has been viewed,
+       -- including when user asks that card be kept in deck.
        view_count integer
 );
 

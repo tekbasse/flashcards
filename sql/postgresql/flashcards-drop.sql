@@ -10,6 +10,7 @@ DROP index flc_user_stack_user_id_idx;
 DROP TABLE flc_user_stack;
 
 DROP index flc_card_stack_card_card_id_idx;
+DROP index flc_card_stack_card_stack_id_idx;
 DROP TABLE flc_card_stack_card;
 DROP TABLE flc_card_stack;
 
