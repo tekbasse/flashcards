@@ -25,7 +25,7 @@ CREATE TABLE flc_card_stack (
 );
 
 CREATE TABLE flc_card_stack_card (
-     card_id integer not null primary key,
+     card_id integer not null,
      instance_id integer,
      stack_id integer not null,
      content_id integer not null,
