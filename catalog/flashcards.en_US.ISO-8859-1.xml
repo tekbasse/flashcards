@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <message_catalog package_key="flashcards" package_version="0.1d" locale="en_US" charset="ISO-8859-1">
-  <msg key="None">None</msg>
-  <msg key="Remaining">Remaining</msg>
   <msg key="Abbreviation">Abbreviation</msg>
+  <msg key="Backside">Backside</msg>
   <msg key="Card">Card</msg>
   <msg key="Cards">Cards</msg>
   <msg key="Completed">Completed</msg>
@@ -11,12 +10,15 @@
   <msg key="Finished">Finished</msg>
   <msg key="Flashcards">Flashcards</msg>
   <msg key="Flip over">Flip over</msg>
+  <msg key="Frontside">Frontside</msg>
   <msg key="ID">ID</msg>
   <msg key="Internal_Notes">Internal Notes</msg>
   <msg key="Keep">Keep</msg>
   <msg key="Keep_in_stack">Keep in stack</msg>
+  <msg key="None">None</msg>
   <msg key="Pop">Pop</msg>
   <msg key="Pop_from_stack">Pop from stack</msg>
+  <msg key="Remaining">Remaining</msg>
   <msg key="Repeats">Repeats</msg>
   <msg key="Stack">Stack</msg>
   <msg key="Started">Started</msg>
