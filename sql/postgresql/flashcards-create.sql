@@ -9,8 +9,8 @@ CREATE TABLE flc_content (
     row_id integer not null,
     content_id integer not null,
     instance_id integer,
-    abbreviation varchar(40),
-    term varchar(200),
+    abbreviation text,
+    term text,
     description text
 );
 
