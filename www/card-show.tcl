@@ -3,6 +3,9 @@
 set title ""
 set form_html ""
 set content_html ""
+set user_message_list [list ]
+set user_message_html ""
+set title "\#flashcards.Frontside\#"
 
 set user_id [ad_conn user_id]
 set instance_id [ad_conn package_id]
@@ -12,30 +15,100 @@ set read_p [permission::permission_p \
 		-privilege read]
 
 if { $read_p } {
-
+    
+    # defaults
+    set input_array(frontside_p) 1
+    set input_array(stock_id) ""
+    set input_array(card_id) ""
+    
     set form_submitted_p [qf_get_inputs_as_array input_array]
     if { $form_submitted_p } {
-	set content_dat $input_array(content_dat)
 	# Get possible inputs
-    } else {
-	# No references provided. # Let's guess at what is the next card and show it.
-	# Log warning. This shouldn't happen.
+	set frontside_p [qf_is_true $input_array(frontside_p) 1]
+	if { [qf_is_natural_number $input_array(stock_id) ] } {
+	    set stock_id $input_array(stock_id)
+	}
+	if { [qf_is_natural_number $input_array(card_id) ] } {
+	    set card_id $input_array(card_id)
+	}
+	
     }
-    # Determine if displaying front or back side of card.
-    # and mode of display.
-    # modes:
-    # display first frontside of card this session,
-    # display back card,
-    # display frontside of card after recording answer from last "backside" form post
 
-    if { $frontside_p } {
-	set title "\#flashcards.Frontside\#"
+    if { $stack_id eq "" } {
+	set card_id ""
+	# Try to get one
+	
+	# No references provided. # Let's guess at what the stack is.
+	# warn, this should't happen
+
+	# Check if user has an incomplete stack or two
+	# If so, choose the most recent incomplete one.
+
+	set stack_id_found_p [db_0or1row flc_user_stats_rN1 {
+	    select stack_id from flc_user_stats
+	    where instance_id=:instance_id
+	    and user_id=:user_id
+	    and time_end is null
+	    order by time_start desc limit 1} ]
+	
+	if { !$stack_id_found_p } {
+	    
+	    # Check if there's only one stack available to start
+	    # If so, choose it.
+	    set stack_id_list [db_0or1row flc_card_stack_rN1 {
+		select stack_id from flc_card_stack
+		where instance_id=:instance_id
+	    } ]
+	    if { [llength $stack_id_list ] == 1 } {
+		set stack_id [lindex $stack_id_list 0]
+	    }
+	}
+    }
+    if { $stack_id eq "" } {
+	lappend user_message_list "Missing card deck info. Browse <a href=\"index\">here</a> to try again."
     } else {
+
+	if { $frontside_p } {
+	    # Determine if displaying front or back side of card.
+	    # and mode of display.
+	    # modes:
+	    # display first frontside of card this session,
+	    #    requries:
+	    #        stack_id, card_id(optional)
+	    #    user options: skip/pass (link to same page)
+	    #                  flip (to see backside) via form
+	    
+	    # display frontside of card
+	    # after recording answer from last "backside" form post.
+	    #    requires
+	    #        stack_id, card_id optional
+	    #    user options: skip/pass (link to same page)
+	    #                  flip (to see backside) via form
+	} else {
+	    # display back card,
+	    #    requires:
+	    #         stack_id, card_id, frontside_p == 0
+	    #    user options:
+	    #                 Put back in stack
+	    #                 Pop from stack
+	    
+
+
+
+	}
+
+	
+    if { !$frontside_p } {
 	set title "\#flashcards.Backside\#"
     }
-    set context [list [list index "\#flashcards.Flashcards#"] $title]
-
-
+    set context [list [list index "\#flashcards.Flashcards\#"] $title]
+    foreach user_message $user_message_list {
+        append user_message_html "<li>${user_message}</li>"
+    }
+    # end of html page
+	
+    
+    
     # following to be changed.. code from www/index.tcl
     set stats_lol [db_list_of_lists flc_user_stats_r {
 	select stack_id,
