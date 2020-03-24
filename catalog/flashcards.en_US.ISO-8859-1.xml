@@ -9,7 +9,8 @@
   <msg key="Edit">Edit</msg>
   <msg key="Finished">Finished</msg>
   <msg key="Flashcards">Flashcards</msg>
-  <msg key="Flip over">Flip over</msg>
+  <msg key="Flip_over">Flip card over.</msg>
+  <msg key="Flip">Flip</msg>
   <msg key="Frontside">Frontside</msg>
   <msg key="ID">ID</msg>
   <msg key="Internal_Notes">Internal Notes</msg>
@@ -19,6 +20,8 @@
   <msg key="Pop">Pop</msg>
   <msg key="Pop_from_stack">Pop from stack</msg>
   <msg key="Remaining">Remaining</msg>
+  <msg key="Skip">Skip</msg>
+  <msg key="Skip__pass">Skip / Pass. Put card back into deck.</msg>
   <msg key="Repeats">Repeats</msg>
   <msg key="Stack">Stack</msg>
   <msg key="Started">Started</msg>
