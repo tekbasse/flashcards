@@ -35,7 +35,7 @@ if { $read_p } {
 	    set id [lindex $stack_list 0]
 	    set name_arr(${id}) [lindex $stack_list 1]
 	    set descr_arr(${id}) [lindex $stack_list 2]
-	    set row_list [list "<a href="card?stack_id=${id}">$name_arr(${id})</a>" $descr_arr(${id}) ]
+	    set row_list [list "<a href=\"card-show?stack_id=${id}\">$name_arr(${id})</a>" $descr_arr(${id}) ]
 	    lappend carddeck_lol $row_list
 	}
     } else {

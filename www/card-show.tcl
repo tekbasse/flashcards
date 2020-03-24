@@ -1,5 +1,5 @@
 
-
+set error_p 0
 set title ""
 set form_html ""
 set content_html ""
@@ -14,19 +14,24 @@ set read_p [permission::permission_p \
 		-object_id $instance_id \
 		-privilege read]
 
+
 if { $read_p } {
     
     # defaults
     set input_array(frontside_p) 1
-    set input_array(stock_id) ""
+    set input_array(stack_id) ""
     set input_array(card_id) ""
+    # For logic dependency
+    set stack_id ""
+    set frontside_p "1"
+    set card_id ""
     
     set form_submitted_p [qf_get_inputs_as_array input_array]
     if { $form_submitted_p } {
 	# Get possible inputs
 	set frontside_p [qf_is_true $input_array(frontside_p) 1]
-	if { [qf_is_natural_number $input_array(stock_id) ] } {
-	    set stock_id $input_array(stock_id)
+	if { [qf_is_natural_number $input_array(stack_id) ] } {
+	    set stack_id $input_array(stack_id)
 	}
 	if { [qf_is_natural_number $input_array(card_id) ] } {
 	    set card_id $input_array(card_id)
@@ -65,7 +70,8 @@ if { $read_p } {
 	}
     }
     if { $stack_id eq "" } {
-	lappend user_message_list "Missing card deck info. Browse <a href=\"index\">here</a> to try again."
+	lappend user_message_list "Missing card deck info. Browse <a href=\"index\">here</a> to try again. (Ref.68)"
+	set error_p 1
     } else {
 
 	if { $frontside_p } {
@@ -74,105 +80,71 @@ if { $read_p } {
 	    # modes:
 	    # display first frontside of card this session,
 	    #    requries:
-	    #        stack_id, card_id(optional)
-	    #    user options: skip/pass (link to same page)
+	    #        stack_id, card_id(optional,but default)
+	    #    user options: skip/pass 
 	    #                  flip (to see backside) via form
 	    
 	    # display frontside of card
 	    # after recording answer from last "backside" form post.
 	    #    requires
-	    #        stack_id, card_id optional
-	    #    user options: skip/pass (link to same page)
+	    #        stack_id, card_id (last)
+	    #    system obtains next card_id
+	    #    user options: skip/pass 
 	    #                  flip (to see backside) via form
-	} else {
-	    # display back card,
-	    #    requires:
-	    #         stack_id, card_id, frontside_p == 0
-	    #    user options:
-	    #                 Put back in stack
-	    #                 Pop from stack
+
+	    set f_lol [list \
+			   [list type submit name skip value "\#flashcards.Skip\#" datatype text label "" title "\#flashcards.Skip__pass\#" ] \
+			   [list type submit name flip value "\#flashcards.Flip\#" datatype text label "" title "\#flashcards.Flip_over\#" ]
+		      ]
+
+
+	    ::qfo::form_list_def_to_array \
+		-list_of_lists_name f_lol \
+		-fields_ordered_list_name qf_fields_ordered_list \
+		-array_name f_arr \
+		-ignore_parse_issues_p 0
 	    
+	    set validated_p [qfo_2g \
+				 -form_id 20200322 \
+				 -fields_ordered_list $qf_fields_ordered_list \
+				 -fields_array f_arr \
+				 -inputs_as_array input_array\
+				 -form_submitted_p $form_submitted_p \
+				 -form_varname form_html ]
+	    if { $validated_p } {
 
 
+		
+	    } elseif { $card_id ne "" } {
+		# display back card,
+		#    requires:
+		#         stack_id, card_id, frontside_p == 0
+		#    user options:
+		#                 Put/Push back in stack
+		#                 Pop from stack
+		
+		
 
-	}
 
-	
-    if { !$frontside_p } {
-	set title "\#flashcards.Backside\#"
-    }
-    set context [list [list index "\#flashcards.Flashcards\#"] $title]
-    foreach user_message $user_message_list {
-        append user_message_html "<li>${user_message}</li>"
-    }
-    # end of html page
-	
-    
-    
-    # following to be changed.. code from www/index.tcl
-    set stats_lol [db_list_of_lists flc_user_stats_r {
-	select stack_id,
-        time_start,
-        time_end,
-        cards_completed_count,
-        cards_remaining_count,
-        repeats_count
-	from flc_user_stats 
-	where instance_id=:instance_id
-	and user_id=:user_id
-	order by time_start desc } ]
-
-    set stack_lol [db_list_of_lists flc_stack_r {
-	select stack_id, name, description
-	from flc_card_stack
-	where instance_id=:instance_id
-	order by stack_id asc } ]
-
-    set carddeck_lol [list [list "\#flashcards.Flashcards\#" \
-				"\#flashcards.Description\#" ]]
-    set carddeck_attrs_list [list border 1]
-    if { [llength $stack_lol] > 0 } {
-	foreach stack_list $stack_lol {
-	    set id [lindex $stack_list 0]
-	    set name_arr(${id}) [lindex $stack_list 1]
-	    set descr_arr(${id}) [lindex $stack_list 2]
-	    set row_list [list "<a href="card?stack_id=${id}">$name_arr(${id})</a>" $descr_arr(${id}) ]
-	    lappend carddeck_lol $row_list
-	}
-    } else {
-	lappend carddeck_lol [list "\#flashcards.None\#" ""]
-    }
-    
-    set avail_decks_html [qss_list_of_lists_to_html_table $carddeck_lol $carddeck_attrs_list]
-    append content_html <br> <br> "<h3>Available decks</h3>" \n $avail_decks_html \n
-    set table_lol [list]
-    set titles_list [list "\#flashcards.Started\#" \
-			 "\#flashcards.Stack\#" \
-			 "\#flashcards.Finished\#" \
-			 "\#flashcards.Completed\#" \
-			 "\#flashcards.Remaining\#" \
-			 "\#flashcards.Repeats\#" ]
-    set table_attrs_list [list border 1]
-    lappend table_lol $titles_list
-    if { [llength $stats_lol] < 1 } {
-	set row_list [list "\#flashcards.None\#" "" "" "" "" "" ]
-	lappend table_lol $row_list
-    } else {    
-	foreach stat_list $stats_lol {
+	    } else {
+		lappend user_message_list "Missing card_id. (Ref.102) Error logged and will be investigated."
+		ns_log Warning "flashcards/www/card-show.tcl:103 No card_id for frontside_p '0' stack_id '${stack_id}' user_id '${user_id}'. "
+		set error_p 1
+	    }
 	    
-	    set stack_id [lindex $stat_list 0]
-	    set name $name_arr(${stack_id})
-
-	    set row_list [lreplace $stat_list 0 0 $name]
-	    append table_lol $row_list
+	    if { !$frontside_p } {
+		set title "\#flashcards.Backside\#"
+	    }
+	    # end of html page
+	    
+	}
+    }
+    
+    if { $error_p } {
+	foreach user_message $user_message_list {
+	    append user_message_html "<li>${user_message}</li>"
 	}
     }
 
-    set table_html [qss_list_of_lists_to_html_table $table_lol $table_attrs_list]
-
-    append content_html <br> <br> "<h3>Your history</h3>" \n $table_html \n
-} else {
-    append content_html "\#flashcards.permission_denied\#"
 }
-
-
+set context [list [list index "\#flashcards.Flashcards\#"] $title]
