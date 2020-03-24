@@ -6,8 +6,66 @@ set read_p [permission::permission_p \
 		-party_id $user_id \
 		-object_id $instance_id \
 		-privilege read]
+
+set error_p 0
+set form_html ""
 set content_html ""
+set user_message_list [list ]
+set user_message_html ""
+set page_mode_list [list "front" "back"]
+
 if { $read_p } {
+
+    # defaults
+    set field_list [list stack_id card_id page flip skip pop out]
+    foreach f field_list {
+	set input_array(${f}) ""
+	set ${f} ""
+    }
+    
+    
+    set form_submitted_p [qf_get_inputs_as_array input_array]
+
+    if { $form_submitted_p } {
+	# Get possible inputs
+	if { [qf_is_natural_number $input_array(stack_id) ] } {
+	    set stack_id $input_array(stack_id)
+	}
+	if { [qf_is_natural_number $input_array(card_id) ] } {
+	    set card_id $input_array(card_id)
+	}
+	if { $input_array(page) in $page_mode_list } {
+	    set page $input_array(page)
+	}
+
+
+    }
+	# Determine if displaying front or back side of card.
+	# and mode of display.
+	# modes:
+	# display first frontside of card this session,
+	#    requries:
+	#        stack_id, card_id(optional,but default)
+	#    user options: skip/pass 
+	#                  flip (to see backside) via form
+	
+	# display frontside of card
+	# after recording answer from last "backside" form post.
+	#    requires
+	#        stack_id, card_id (last)
+	#    system obtains next card_id
+	#    user options: skip/pass 
+	#                  flip (to see backside) via form
+
+
+
+	    # display back card,
+	    #    requires:
+	    #         stack_id, card_id
+	    #    user options:
+	    #                 Put/Push back in stack
+	    #                 Pop from stack
+
 
     set stats_lol [db_list_of_lists flc_user_stats_r {
 	select stack_id,
