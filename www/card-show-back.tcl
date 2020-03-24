@@ -55,7 +55,7 @@ if { $read_p } {
 	    and user_id=:user_id
 	    and time_end is null
 	    order by time_start desc limit 1} ]
-	
+	ns_log Notice "flashcards/www/card-show.tcl L58 stack_id_found_p '${stack_id_found_p}'"	
 	if { !$stack_id_found_p } {
 	    
 	    # Check if there's only one stack available to start
@@ -73,7 +73,7 @@ if { $read_p } {
 	lappend user_message_list "Missing card deck info. Browse <a href=\"index\">here</a> to try again. (Ref.68)"
 	set error_p 1
     } else {
-
+ns_log Notice "flashcards/www/card-show.tcl L76: frontside_p '$frontside_p'"
 	if { $frontside_p } {
 	    # Determine if displaying front or back side of card.
 	    # and mode of display.
@@ -116,6 +116,7 @@ if { $read_p } {
 
 		
 	    } elseif { $card_id ne "" } {
+ns_log Notice "flashcards/www/card-show.tcl L119. Display back card."
 		# display back card,
 		#    requires:
 		#         stack_id, card_id, frontside_p == 0
@@ -135,7 +136,7 @@ if { $read_p } {
 	    if { !$frontside_p } {
 		set title "\#flashcards.Backside\#"
 	    }
-	    # end of html page
+
 	    
 	}
     }
