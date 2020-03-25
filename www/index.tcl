@@ -65,13 +65,13 @@ if { !$read_p } {
 	# Determine mode, set mode to: index, frontside, backside
 	if { $skip_p || $pop_p || $keep_p } {
 	    set mode frontside
-	} elseif { $flip } {
+	} elseif { $flip && $card_id ne "" && $stack_id ne "" } {
 	    set mode backside
 	}
     }
 
     # Common to all modes:
-    set stack_lol [db_list_of_lists flc_stack_r {
+    set stacks_lol [db_list_of_lists flc_stack_r {
 	select stack_id, content_id, name, description
 	from flc_card_stack
 	where instance_id=:instance_id
@@ -99,9 +99,9 @@ if { !$read_p } {
 
 	    # Make this a radio list:
 	    set carddeck_lol [list ]
-	    if { [llength $stack_lol] > 0 } {
+	    if { [llength $stacks_lol] > 0 } {
 		set attr_list [list ]
-		foreach stack_list $stack_lol {
+		foreach stack_list $stacks_lol {
 		    lassign $stack_list id c_id name_arr(${id}) descr_arr(${id})
 		    # Make a radio list item with a label
 		    # if new: stack, description (make a new deck)
@@ -138,25 +138,109 @@ if { !$read_p } {
 	    
 	}
 	frontside {
-	    # if there is a 'pop' or 'keep' answer from backside, record it before
+	    # increase view_count
+	    set view_count ""
+	    db1row flc_user_stack_r4 { select view_count
+		from flc_user_stack where
+		instance_id=:instance_id and
+		user_id=:user_id and
+		stack_id=:stack_id and
+		card_id=:card_id and
+		done_p !='t' }
+	    if { $view_count eq "" } {
+		set view_count 0
+	    }
+	    incr view_count
+	    db_dml flc_user_stack_u0 { update flc_user_stack
+		set view_count=:view_count where
+		instance_id=:instance_id and
+		user_id=:user_id and
+		stack_id=:stack_id and
+		card_id=:card_id and
+		done_p !='t' }
+	    
+	    # If there is a 'pop' or 'keep' answer from backside,
+	    # record it before rendering next frontside page.
 	    if { $pop_p } {
-		
-	    # rendering page.
-	    
-	    # after recording answer from last "backside" form post.
-	    # display first frontside of card this session,
-	    #    requries:
-	    #        stack_id, content_id, card_id(optional,but default)
-	    #    user options: skip/pass 
-	    #                  flip (to see backside) via form
-	    
-	    # display additonal frontside of cards
+		# remove the card from the deck
+		db_dml flc_user_stack_u1 { update flc_user_stack
+		    set done_p = 't' where
+		    instance_id=:instance_id and
+		    stack_id=:stack_id and
+		    card_id=:card_id and
+		    user_id=:user_id }
+	    }
+	    if { $keep_p } {
+		# Put the card back in the deck, in a random place.
+		# Get current order_id 
+		db1row { select order_id
+		    from flc_user_stack
+		    where instance_id=:instance_id and
+		    stack_id=:stack_id and
+		    card_id=:card_id and
+		    user_id=:user_id and
+		    done_p != 't' }
+		# Get last order_id in deck.
+		# It may be the same as the current one.
+		db_1row flc_user_stack_r1b {
+		    select max( order_id) as order_id_last
+		    from flc_user_stack
+		    where instance_id=:instance_id and
+		    stack_id=:stack_id and
+		    user_id=:user_id and
+		    done_p !='t' }
+		# choose a random number inbetween
+		set order_diff [expr { $order_id_last - $order_id } ]
+		set order_id_new [randomRange $order_diff]
+		incr order_id_new
+		# assign current card to new number
+		db_dml flc_user_stack_u2 { update flc_user_stack
+		    set order_id=:order_id_new where
+		    instance_id=:instance_id and
+		    stack_id=:stack_id and
+		    card_id=:card_id and
+		    user_id=:user_id }
+	    }
 
-	    #    requires
-	    #        stack_id, contenet_id, card_id (last)
-	    #    system obtains next card_id
-	    #    user options: skip/pass 
-	    #                  flip (to see backside) via form
+	    # display frontside of card 
+	    #    requries:
+	    #        stack_id, content_id, card_id (calculated)
+
+	    # get next card_id
+	    set card_id_exists_p [db_0or1row flc_user_stack_r3 {
+		select card_id from flc_user_stack where
+		instance_id=:instance_id and
+		user_id=:user_id and
+		stack_id=:stack_id and
+		done_p!='t'
+		order by order_id asc limit 1 } ]
+	    if { !$card_id_exists_p } {
+		append content_html {
+		    <div style="align:center;"><p><strong>\#Done_Congratulations_\#</strong></p></div>}
+	    } else {
+		
+		# Get card data
+		set deck_list [lsearch -exact -integer -inline -index 0 $stacks_lol $stack_id]
+		lassign $deck_list d_stack_id content_id deck_name deck_description
+		
+		    
+		db_1row flc_card_stack_card_r1 {
+		    select row_id,front_ref,back_ref
+		    from flc_card_stack_card where
+		    instance_id=:instance_id and
+		    stack_id=:stack_id and
+		    content_id=:content_id }
+		db_1row flc_content_r2 {
+		    select abbreviation, term, description
+		    from flc_content where
+		    instance_id=:instance_id and
+		    content_id=:content_id and
+		    row_id=:row_id }
+		
+		    # Build card view as a form.
+		    #    user options: skip/pass 
+		    #                  flip (to see backside) via form
+	    
 
 	}
 	backside {
