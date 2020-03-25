@@ -51,10 +51,10 @@ if { !$read_p } {
 	if { [info exists input_array(skip) ] && $input_array(skip) ne "" } {
 	    set skip_p 1
 	}
-	if { [info exists input_array(skip) ] && $input_array(pop) ne "" } {
+	if { [info exists input_array(pop) ] && $input_array(pop) ne "" } {
 	    set pop_p 1
 	}
-	if { [info exists input_array(skip) ] && $input_array(out) ne "" } {
+	if { [info exists input_array(out) ] && $input_array(out) ne "" } {
 	    set out_p 1
 	}
 	
@@ -134,6 +134,10 @@ if { !$read_p } {
 	    
 	}
 	frontside {
+	    # if there is a 'pop' or 'out' answer from backside, record it before
+	    # rendering page.
+	    
+	    # after recording answer from last "backside" form post.
 	    # display first frontside of card this session,
 	    #    requries:
 	    #        stack_id, content_id, card_id(optional,but default)
@@ -141,7 +145,7 @@ if { !$read_p } {
 	    #                  flip (to see backside) via form
 	    
 	    # display additonal frontside of cards
-	    # after recording answer from last "backside" form post.
+
 	    #    requires
 	    #        stack_id, contenet_id, card_id (last)
 	    #    system obtains next card_id
