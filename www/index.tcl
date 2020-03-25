@@ -14,6 +14,7 @@ set user_message_list [list ]
 set user_message_html ""
 set page_mode_list [list "front" "back"]
 
+
 if { !$read_p } {
     append content_html "\#flashcards.permission_denied\#"
 } else {
@@ -29,6 +30,7 @@ if { !$read_p } {
     set pop_p 0
     set out_p 0
     set mode index
+    set table_attrs_list [list border 1]
     
     set form_submitted_p [qf_get_inputs_as_array input_array]
     
@@ -64,61 +66,124 @@ if { !$read_p } {
 	}
     }
 
+    # Common to all modes:
+    set stack_lol [db_list_of_lists flc_stack_r {
+	select stack_id, content_id, name, description
+	from flc_card_stack
+	where instance_id=:instance_id
+	order by stack_id asc } ]
+
     # Determine if displaying front or back side of card.
     # and mode of display.
     
     # implement mode via switch, which sets  up page and parameters for form.
     switch -exact -- $mode {
 	index {
-	    set stats_lol [db_list_of_lists flc_user_stats_r {
-		select stack_id,
-		time_start,
-		time_end,
-		cards_completed_count,
-		cards_remaining_count,
-		repeats_count
-		from flc_user_stats 
-		where instance_id=:instance_id
-		and user_id=:user_id
-		order by time_start desc } ]
 
-	    set stack_lol [db_list_of_lists flc_stack_r {
-		select stack_id, name, description
-		from flc_card_stack
-		where instance_id=:instance_id
-		order by stack_id asc } ]
+	    # make a radio form 
+	    # for new ones, and for user history cases that are not complete.
+	    # with a start button
+
+	    set active_lol [db_list_of_lists flc_user_stats_r {
+		select stack_id,
+		time_start
+		from flc_user_stats 
+		where instance_id=:instance_id 
+		and user_id=:user_id
+		and time_end is null
+		order by time_start desc } ]
 
 	    # Make this a radio list:
 	    set carddeck_lol [list ]
 	    if { [llength $stack_lol] > 0 } {
 		set attr_list [list ]
 		foreach stack_list $stack_lol {
-		    set id [lindex $stack_list 0]
-		    set name_arr(${id}) [lindex $stack_list 1]
-		    set descr_arr(${id}) [lindex $stack_list 2]
+		    lassign $stack_list id c_id name_arr(${id}) descr_arr(${id})
 		    # Make a radio list item with a label
 		    # if new: stack, description (make a new deck)
 		    # if incomplete: stack, started x, continue
-		    set row_list [list value ${id} label "$name_arr(${id}): $descr_arr(${id})" ]
+
+		    # First, new stacks
+		    set row_list [list \
+				      value ${id} label \
+				      "$name_arr(${id}): $descr_arr(${id})" ]
 		    append attr_list $row_list
 		}
-		### Need to add unfished cases to attr_list
-		
-		    set f_lol [list \
-				   [list type radio name stack_id value $attr_list
-				   ]
-
+	    }
+	    if {  [llength $active_lol] > 0 } {
+		#  add unfinished cases to attr_list
+		foreach active_list $active_lol {
+		    lassign $active_list id time_start
+		    set row_list [list \
+				      value ${id} label \
+				      "$name_arr(${id}): Started ${time_start}" ]
+		    append attr_list $row_list
 		}
+	    }
+	    if { [llength $f_lol ] > 0 } {
+		set f_lol [list \
+			       [list type radio \
+				    name stack_id \
+				    value $attr_list ] \
+			       [list type submit name submit \
+				    value "\#flashcards.Start\#" datatype text label ""] \
+			      ]
 	    } else {
 		set form_html "\#flashcards.None\#"
 	    }
-	    ##### instead of making a table, make a radio form. choose/start
-	    # for new ones, and for user history cases that are not complete.
-	    set avail_decks_html [qss_list_of_lists_to_html_table $carddeck_lol $carddeck_attrs_list]
-	    append content_html <br> <br> "<h3>Available decks</h3>" \n $avail_decks_html \n
 	    
-	    # Make a table of user history for complete cases.
-	    set table_lol [list]
+	}
+	frontside {
+	    # display first frontside of card this session,
+	    #    requries:
+	    #        stack_id, content_id, card_id(optional,but default)
+	    #    user options: skip/pass 
+	    #                  flip (to see backside) via form
+	    
+	    # display additonal frontside of cards
+	    # after recording answer from last "backside" form post.
+	    #    requires
+	    #        stack_id, contenet_id, card_id (last)
+	    #    system obtains next card_id
+	    #    user options: skip/pass 
+	    #                  flip (to see backside) via form
+
+	}
+	backside {
+	    # display back card,
+	    #    requires:
+	    #         stack_id, content_id, card_id
+	    #    user options:
+	    #                 Put/Push back in stack
+	    #                 Pop from stack
+	}
+    }
+
+}
+
+
+# build form
+#  append form_html if it already exists.
+# if f_lol, is empty, skip building a form.
+
+    append content_html <br> <br> "<h3>History</h3>" \n $avail_decks_html \n
+# At bottom of page,
+    # make a table of user history for complete cases.
+    set history_lol [db_list_of_lists flc_user_stats_r {
+	select stack_id,
+	time_start,
+	time_end,
+	cards_completed_count,
+	cards_remaining_count,
+	repeats_count
+	from flc_user_stats 
+	where instance_id=:instance_id 
+	and user_id=:user_id
+	and time_end is null
+	order by time_start desc } ]
+    
+
+	set table_lol [list]
 	    set titles_list [list "\#flashcards.Started\#" \
 				 "\#flashcards.Stack\#" \
 				 "\#flashcards.Finished\#" \
@@ -147,36 +212,3 @@ if { !$read_p } {
 
 	    set content_part2_html "<br><br><h3>Your history</h3>${table_html}"
 
-	}
-	frontside {
-	    # display first frontside of card this session,
-	    #    requries:
-	    #        stack_id, card_id(optional,but default)
-	    #    user options: skip/pass 
-	    #                  flip (to see backside) via form
-	    
-	    # display additonal frontside of cards
-	    # after recording answer from last "backside" form post.
-	    #    requires
-	    #        stack_id, card_id (last)
-	    #    system obtains next card_id
-	    #    user options: skip/pass 
-	    #                  flip (to see backside) via form
-
-	}
-	backside {
-	    # display back card,
-	    #    requires:
-	    #         stack_id, card_id
-	    #    user options:
-	    #                 Put/Push back in stack
-	    #                 Pop from stack
-	}
-    }
-
-}
-
-
-# build form
-#  append form_html if it already exists.
-# if f_lol, is empty, skip building a form.
