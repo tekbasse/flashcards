@@ -24,6 +24,7 @@
   <msg key="Skip__pass">Skip / Pass. Put card back into deck.</msg>
   <msg key="Repeats">Repeats</msg>
   <msg key="Stack">Stack</msg>
+  <msg key="Start">Start</msg>
   <msg key="Started">Started</msg>
   <msg key="Term">Term</msg>
   <msg key="abbreviation">abbreviation</msg>
