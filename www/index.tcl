@@ -70,13 +70,17 @@ if { !$read_p } {
 	}
     }
 
-    # Common to all modes:
+    # Common to more than one mode:
     set stacks_lol [db_list_of_lists flc_stack_r {
 	select stack_id, content_id, name, description
 	from flc_card_stack
 	where instance_id=:instance_id
 	order by stack_id asc } ]
 
+    set card_title(a) "\#flashcards.Abbreviation\#"
+    set card_title(t) "\#flashcards.Term\#"
+    set card_title(d) "\#flashcards.Description\#"
+    
     # Determine if displaying front or back side of card.
     # and mode of display.
     
@@ -125,13 +129,11 @@ if { !$read_p } {
 		}
 	    }
 	    if { [llength $f_lol ] > 0 } {
-		set f_lol [list \
-			       [list type radio \
-				    name stack_id \
-				    value $attr_list ] \
-			       [list type submit name submit \
-				    value "\#flashcards.Start\#" datatype text label ""] \
-			      ]
+		append f_lol [list type radio \
+				  name stack_id \
+				  value $attr_list ]
+		append f_lol [list type submit name submit \
+				  value "\#flashcards.Start\#" datatype text label ""]
 	    } else {
 		set form_html "\#flashcards.None\#"
 	    }
@@ -222,7 +224,6 @@ if { !$read_p } {
 		# Get card data
 		set deck_list [lsearch -exact -integer -inline -index 0 $stacks_lol $stack_id]
 		lassign $deck_list d_stack_id content_id deck_name deck_description
-		
 		    
 		db_1row flc_card_stack_card_r1 {
 		    select row_id,front_ref,back_ref
@@ -230,17 +231,28 @@ if { !$read_p } {
 		    instance_id=:instance_id and
 		    stack_id=:stack_id and
 		    content_id=:content_id }
+		# for front_ref,back_ref
+		# a = abbreviation
+		# t = term
+		# d = description
+		
 		db_1row flc_content_r2 {
 		    select abbreviation, term, description
 		    from flc_content where
 		    instance_id=:instance_id and
 		    content_id=:content_id and
 		    row_id=:row_id }
-		
-		    # Build card view as a form.
-		    #    user options: skip/pass 
-		    #                  flip (to see backside) via form
-	    
+		set content_arr(a) $abbreviation
+		set content_arr(t) $term
+		set content_arr(d) $description
+
+		# Build card view 
+		#    user options: skip/pass 
+		#                  flip (to see backside) via form
+		append content_html "<h1>$card_title(${front_ref})</h1>\n"
+		append content_html "<p><strong>$content_arr(${front_ref})</strong>"
+		# Add the button choices as a form.
+		######
 
 	}
 	backside {
