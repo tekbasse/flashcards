@@ -25,10 +25,14 @@ if { !$read_p } {
 	set input_array(${f}) ""
 	set ${f} ""
     }
+    # flip: flip fronside card to backside
     set flip_p 0
+    # skip: don't flip card, keep it in deck
     set skip_p 0
+    # pop: pop card from deck, display next card
     set pop_p 0
-    set out_p 0
+    # keep: keep card in deck, display next card 
+    set keep_p 0
     set mode index
     set table_attrs_list [list border 1]
     
@@ -54,12 +58,12 @@ if { !$read_p } {
 	if { [info exists input_array(pop) ] && $input_array(pop) ne "" } {
 	    set pop_p 1
 	}
-	if { [info exists input_array(out) ] && $input_array(out) ne "" } {
-	    set out_p 1
+	if { [info exists input_array(keep) ] && $input_array(keep) ne "" } {
+	    set keep_p 1
 	}
 	
 	# Determine mode, set mode to: index, frontside, backside
-	if { $skip_p || $pop_p || $out_p } {
+	if { $skip_p || $pop_p || $keep_p } {
 	    set mode frontside
 	} elseif { $flip } {
 	    set mode backside
@@ -134,7 +138,9 @@ if { !$read_p } {
 	    
 	}
 	frontside {
-	    # if there is a 'pop' or 'out' answer from backside, record it before
+	    # if there is a 'pop' or 'keep' answer from backside, record it before
+	    if { $pop_p } {
+		
 	    # rendering page.
 	    
 	    # after recording answer from last "backside" form post.
@@ -158,7 +164,7 @@ if { !$read_p } {
 	    #    requires:
 	    #         stack_id, content_id, card_id
 	    #    user options:
-	    #                 Put/Push back in stack
+	    #                 Keep put/push back in stack
 	    #                 Pop from stack
 	}
     }
