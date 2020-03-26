@@ -5,7 +5,7 @@ set user_id [ad_conn user_id]
 set admin_p [permission::permission_p -party_id $user_id -object_id [ad_conn package_id] -privilege admin]
 
 set title "Add Deck"
-set context [list [list ../ "\#flashcards.Flashcards\#" ] [list index "Admin"] $title]
+set context [list $title]
 set content_html ""
 set user_message_list [list ]
 if { $admin_p } {
