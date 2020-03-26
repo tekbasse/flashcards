@@ -5,7 +5,7 @@ set user_id [ad_conn user_id]
 set admin_p [permission::permission_p -party_id $user_id -object_id [ad_conn package_id] -privilege admin]
 
 set title "Admin"
-set context [list [list ../ "\#flashcards.Flashcards\#" ] $title]
+set context [list [list $title]]
 set content_html ""
 
 if { $admin_p } {
