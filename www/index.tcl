@@ -12,7 +12,7 @@ set form_html ""
 set content_html ""
 set user_message_list [list ]
 set user_message_html ""
-set page_mode_list [list "front" "back"]
+set page_mode_list [list "frontside" "backside" "index"]
 
 
 if { !$read_p } {
@@ -20,7 +20,7 @@ if { !$read_p } {
 } else {
     
     # defaults
-    set field_list [list stack_id card_id page flip skip pop out]
+    set field_list [list stack_id card_id content_id page flip skip pop out back_value back_title front_value front_title]
     foreach f field_list {
 	set input_array(${f}) ""
 	set ${f} ""
@@ -35,6 +35,8 @@ if { !$read_p } {
     set keep_p 0
     set mode index
     set table_attrs_list [list border 1]
+    # Used to build form
+    set f_lol [list ]
     
     set form_submitted_p [qf_get_inputs_as_array input_array]
     
@@ -49,16 +51,16 @@ if { !$read_p } {
 	if { $input_array(page) in $page_mode_list } {
 	    set page $input_array(page)
 	}
-	if { [info exists input_array(flip) ] && $input_array(flip) ne "" } {
+	if { $input_array(flip) ne "" } {
 	    set flip_p 1
 	}
-	if { [info exists input_array(skip) ] && $input_array(skip) ne "" } {
+	if { $input_array(skip) ne "" } {
 	    set skip_p 1
 	}
-	if { [info exists input_array(pop) ] && $input_array(pop) ne "" } {
+	if { $input_array(pop) ne "" } {
 	    set pop_p 1
 	}
-	if { [info exists input_array(keep) ] && $input_array(keep) ne "" } {
+	if { $input_array(keep) ne "" } {
 	    set keep_p 1
 	}
 	
@@ -77,9 +79,9 @@ if { !$read_p } {
 	where instance_id=:instance_id
 	order by stack_id asc } ]
 
-    set card_title(a) "\#flashcards.Abbreviation\#"
-    set card_title(t) "\#flashcards.Term\#"
-    set card_title(d) "\#flashcards.Description\#"
+    set card_title_arr(a) "\#flashcards.Abbreviation\#"
+    set card_title_arr(t) "\#flashcards.Term\#"
+    set card_title_arr(d) "\#flashcards.Description\#"
     
     # Determine if displaying front or back side of card.
     # and mode of display.
@@ -104,7 +106,7 @@ if { !$read_p } {
 	    # Make this a radio list:
 	    set carddeck_lol [list ]
 	    if { [llength $stacks_lol] > 0 } {
-		set attr_list [list ]
+		set attr_lol [list ]
 		foreach stack_list $stacks_lol {
 		    lassign $stack_list id c_id name_arr(${id}) descr_arr(${id})
 		    # Make a radio list item with a label
@@ -112,26 +114,27 @@ if { !$read_p } {
 		    # if incomplete: stack, started x, continue
 
 		    # First, new stacks
-		    set row_list [list \
+		    set row_lol [list \
 				      value ${id} label \
 				      "$name_arr(${id}): $descr_arr(${id})" ]
-		    append attr_list $row_list
+		    append attr_lol $row_list
 		}
 	    }
 	    if {  [llength $active_lol] > 0 } {
-		#  add unfinished cases to attr_list
+		#  add unfinished cases to attr_lol
 		foreach active_list $active_lol {
 		    lassign $active_list id time_start
 		    set row_list [list \
 				      value ${id} label \
 				      "$name_arr(${id}): Started ${time_start}" ]
-		    append attr_list $row_list
+		    append attr_lol $row_list
 		}
 	    }
-	    if { [llength $f_lol ] > 0 } {
+	    if { [llength $attr_lol ] > 0 } {
+		
 		append f_lol [list type radio \
 				  name stack_id \
-				  value $attr_list ]
+				  value $attr_lol ]
 		append f_lol [list type submit name submit \
 				  value "\#flashcards.Start\#" datatype text label ""]
 	    } else {
@@ -249,19 +252,78 @@ if { !$read_p } {
 		# Build card view 
 		#    user options: skip/pass 
 		#                  flip (to see backside) via form
-		append content_html "<h1>$card_title(${front_ref})</h1>\n"
-		append content_html "<p><strong>$content_arr(${front_ref})</strong>"
-		# Add the button choices as a form.
-		######
 
-	}
-	backside {
-	    # display back card,
-	    #    requires:
-	    #         stack_id, content_id, card_id
-	    #    user options:
-	    #                 Keep put/push back in stack
-	    #                 Pop from stack
+		append content_html "<pre>\#flashcards.Frontside\#</pre>"
+		append content_html "<h1>$card_title_arr(${front_ref})</h1>\n"
+		append content_html "<p><strong>$content_arr(${front_ref})</strong></p>"
+		append content_html "<br><br>"
+		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
+		append content_html "<br>"
+		append_content_html "<h2>\#flashcards.Backside\#</h2>"
+		append_content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
+		append content_html "<h3>\#flashcards.Flip_over_to_see\#</h3>"
+		
+		# Add the button choices as a form.
+		set f_lol [list \
+			       [list type hidden name stack_id value ${stack_id} label ""] \
+			       [list type hidden name content_id value ${content_id} label "" ] \
+			       [list type hidden name card_id value ${card_id} label "" ] \
+			       [list type hidden name back_value value "${content_arr(${back_ref})" label "" ] \
+			       [list type hidden name back_title value "${card_title_arr(${back_ref})" label "" ] \
+			       [list type hidden name front_value value "${content_arr(${front_ref})" label "" ] \
+			       [list type hidden name front_title value "${card_title_arr(${front_ref})" label "" ] \
+			       [list type submit name skip \
+				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "class: btn; float: left;"] \
+			        [list type submit name flip \
+				     value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "class: btn; float: right;"] \
+			      ]
+	    }
+	    backside {
+		# additional input validation for this mode
+		if { [qf_is_natural_number $input_array(content_id) ] } {
+		    set content_id $input_array(content_id)
+		}
+		if { [hf_are_safe_textarea_characters_q $input_array(back_value) ] } {
+		    set back_value $input_array(back_value)
+		}
+		if { [hf_are_safe_textarea_characters_q $input_array(back_title) ] } {
+		    set back_title $input_array(back_title)
+		}
+		if { [hf_are_safe_textarea_characters_q $input_array(front_value) ] } {
+		    set back_value $input_array(front_value)
+		}
+		if { [hf_are_safe_textarea_characters_q $input_array(front_title) ] } {
+		    set back_title $input_array(front_title)
+		}
+		# display back card,
+		#    requires:
+		#         stack_id, content_id, card_id, back_value, back_title, front_value, front_title
+		# These values should already have been passed
+		# via mode: frontside
+		
+		append content_html "<pre>\#flashcards.Frontside\#</pre>"
+		append content_html "<h1>$front_title</h1>\n"
+		append content_html "<p><strong>$front_value</strong></p>"
+		append content_html "<br><br>"
+		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
+		append content_html "<br>"
+		append_content_html "<h2>\#flashcards.Backside\#</h2>"
+		append content_html "<p><strong>${back_value}</strong></p>"
+	    
+		#    user options:
+		#                 Keep put/push back in stack
+		#                 Pop from stack
+		# Add the button choices as a form.
+		set f_lol [list \
+			       [list type hidden name stack_id value ${stack_id} label ""] \
+			       [list type hidden name card_id value ${card_id} label "" ] \
+			       [list type submit name skip \
+				    value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn; float: left;"] \
+			       [list type submit name flip \
+				     value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn; float: right;"] \
+			      ]
+		
+	    }
 	}
     }
 
