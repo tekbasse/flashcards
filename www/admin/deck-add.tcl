@@ -62,9 +62,10 @@ if { $admin_p } {
 		set content_id [db_nextval flc_id_seq]
 		# generate flashcards from content
 		set stack_id [db_nextval flc_id_seq]
+		set content_id [db_nextval flc_id_seq]
 		db_dml flc_card_stack_cr {insert into flc_card_stack
-		    (stack_id,instance_id,name,description)
-		    values (:stack_id,:instance_id,:deck_name,:deck_description) }
+		    (stack_id,content_id,instance_id,name,description)
+		    values (:stack_id,:content_id,:instance_id,:deck_name,:deck_description) }
 		set card_id 0
 		set row_id 0
 		set card_count 0
@@ -83,23 +84,23 @@ if { $admin_p } {
 			incr card_id $rows_count
 			incr card_count 2
 			db_dml flc_card_stack_card_cr {insert into flc_card_stack_card
-			    (card_id,instance_id,stack_id,row_id,content_id,front_ref,back_ref)
-			    values (:card_id,:instance_id,:stack_id,:row_id,:content_id,'a','t') }
+			    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
+			    values (:card_id,:instance_id,:stack_id,:row_id,'a','t') }
 			incr card_id $rows_count
 			db_dml flc_card_stack_card_cr2 {insert into flc_card_stack_card
-			    (card_id,instance_id,stack_id,row_id,content_id,front_ref,back_ref)
-			    values (:card_id,:instance_id,:stack_id,:row_id,:content_id,'t','a') }
+			    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
+			    values (:card_id,:instance_id,:stack_id,:row_id,'t','a') }
 		    }
 		    if { $description ne "" && $term ne "" } {
 			incr card_id $rows_count
 			incr card_count 2
 			db_dml flc_card_stack_card_cr {insert into flc_card_stack_card
-			    (card_id,instance_id,stack_id,row_id,content_id,front_ref,back_ref)
-			    values (:card_id,:instance_id,:stack_id,:row_id,:content_id,'t','d') }
+			    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
+			    values (:card_id,:instance_id,:stack_id,:row_id,'t','d') }
 			incr card_id $rows_count
 			db_dml flc_card_stack_card_cr2 {insert into flc_card_stack_card
-			    (card_id,instance_id,stack_id,row_id,content_id,front_ref,back_ref)
-			    values (:card_id,:instance_id,:stack_id,:row_id,:content_id,'d','t') }
+			    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
+			    values (:card_id,:instance_id,:stack_id,:row_id,'d','t') }
 		    }
 			    
 		}
