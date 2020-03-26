@@ -122,15 +122,16 @@ if { !$read_p } {
 		    # First, new stacks
 		    set row_list [list \
 				      value ${id} label \
-				      "$name_arr(${id}): $descr_arr(${id})" ]
+				      "$name_arr(${id})(ref${id}): $descr_arr(${id})" ]
 		    lappend attr_lol $row_list
 		}
 	    }
 	    if {  [llength $active_lol] > 0 } {
+		ns_log Notice "active_lol '$active_lol'"
 		#  add unfinished cases to attr_lol
 		foreach active_list $active_lol {
 		    lassign $active_list id time_start deck_id
-		    set row_list [list value ${deck_id} label "$name_arr(${id}): Started ${time_start}" ]
+		    set row_list [list value ${deck_id} label "$name_arr(${id})(ref${deck_id}): Started ${time_start}" ]
 		    lappend attr_lol $row_list
 		}
 	    }
@@ -157,7 +158,7 @@ if { !$read_p } {
 		from flc_user_stats 
 		where instance_id=:instance_id 
 		and user_id=:user_id
-		and time_end is null
+		and time_end is not null
 		order by time_start desc } ]
 	    
 	    set table_lol [list]
@@ -222,17 +223,19 @@ if { !$read_p } {
 		    values (:stack_id,:deck_id,:time_start,'0',:count,:user_id,:instance_id)
 		    
 		}
+		set card_id [lindex $card_id_shuffled_list 0]
 	    }
 	    
 	    # increase view_count
 	    set view_count ""
-	    db_1row flc_user_stack_r4 { select count(*) as view_count
+	    ns_log Notice "flashcards/www/index.tcl instance_id '$instance_id' user_id '$user_id' deck_id '$deck_id' card_id '$card_id'"
+	    db_1row flc_user_stack_r4 { select view_count
 		from flc_user_stack where
 		instance_id=:instance_id and
 		user_id=:user_id and
 		deck_id=:deck_id and
 		card_id=:card_id and
-		done_p !='t' }
+		(done_p !='t' or done_p is null) }
 	    if { $view_count eq "" } {
 		set view_count 0
 	    }
@@ -243,7 +246,7 @@ if { !$read_p } {
 		user_id=:user_id and
 		deck_id=:deck_id and
 		card_id=:card_id and
-		done_p !='t' }
+		( done_p !='t' or done_p is null) }
 	    
 	    # If there is a 'pop' or 'keep' answer from backside,
 	    # record it before rendering next frontside page.
@@ -265,7 +268,7 @@ if { !$read_p } {
 		    deck_id=:deck_id and
 		    card_id=:card_id and
 		    user_id=:user_id and
-		    done_p != 't' }
+		    ( done_p!='t' or done_p is null ) }
 		# Get last order_id in deck.
 		# It may be the same as the current one.
 		db_1row flc_user_stack_r1b {
@@ -274,7 +277,7 @@ if { !$read_p } {
 		    where instance_id=:instance_id and
 		    deck_id=:deck_id and
 		    user_id=:user_id and
-		    done_p !='t' }
+		    ( done_p!='t' or done_p is null ) }
 		# choose a random number inbetween
 		set order_diff [expr { $order_id_last - $order_id } ]
 		set order_id_new [randomRange $order_diff]
@@ -298,7 +301,7 @@ if { !$read_p } {
 		instance_id=:instance_id and
 		user_id=:user_id and
 		deck_id=:deck_id and
-		done_p!='t'
+		( done_p!='t' or done_p is null )
 		order by order_id asc limit 1 } ]
 	    if { !$card_id_exists_p } {
 		append content_html {
@@ -314,7 +317,7 @@ if { !$read_p } {
 		    from flc_card_stack_card where
 		    instance_id=:instance_id and
 		    stack_id=:stack_id and
-		    content_id=:content_id }
+		    card_id=:card_id }
 		# for front_ref,back_ref
 		# a = abbreviation
 		# t = term
