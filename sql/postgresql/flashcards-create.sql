@@ -19,19 +19,22 @@ create index flc_content_row_id_idx on flc_content (row_id);
 
 CREATE TABLE flc_card_stack (
      stack_id integer not null primary key,
+     -- The content_id is a referemce to flc_content
+     -- and is the same for an entire deck.
+     content_id integer not null,
      instance_id integer,
      name text,
      description text
 );
 
 CREATE TABLE flc_card_stack_card (
+     -- This set of cards defines a deck
      instance_id integer,
      -- card in deck references
      stack_id integer not null,
      card_id integer not null,
      
-     -- references to build content of card from imported data
-     content_id integer not null,
+     -- specific references to build content of card from imported data
      row_id integer not null,
      -- we only need 3 distinct references to specify both sides of a card
      -- from a row of flc_content
