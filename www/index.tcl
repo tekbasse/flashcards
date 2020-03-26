@@ -78,7 +78,7 @@ if { !$read_p } {
 
     # Common to more than one mode:
     set stacks_lol [db_list_of_lists flc_stack_r {
-	select stack_id, content_id, name, description
+	select stack_id, content_id, name, description, card_count
 	from flc_card_stack
 	where instance_id=:instance_id
 	order by stack_id asc } ]
@@ -86,7 +86,7 @@ if { !$read_p } {
     set card_title_arr(a) "\#flashcards.Abbreviation\#"
     set card_title_arr(t) "\#flashcards.Term\#"
     set card_title_arr(d) "\#flashcards.Description\#"
-    
+
     # Determine if displaying front or back side of card.
     # and mode of display.
     ns_log Notice "flashcards/www/index.tcl.88: mode '${mode}' "
@@ -101,7 +101,8 @@ if { !$read_p } {
 	    set active_lol [db_list_of_lists flc_user_stats_r {
 		select stack_id,
 		time_start,
-		deck_id
+		deck_id,
+		cards_completed_count
 		from flc_user_stats 
 		where instance_id=:instance_id 
 		and user_id=:user_id
@@ -114,7 +115,7 @@ if { !$read_p } {
 	    if { [llength $stacks_lol] > 0 } {
 
 		foreach stack_list $stacks_lol {
-		    lassign $stack_list id c_id name_arr(${id}) descr_arr(${id})
+		    lassign $stack_list id c_id name_arr(${id}) descr_arr(${id}) card_ct_arr(${id})
 		    # Make a radio list item with a label
 		    # if new: stack, description (make a new deck)
 		    # if incomplete: stack, started x, continue
@@ -130,8 +131,8 @@ if { !$read_p } {
 		ns_log Notice "active_lol '$active_lol'"
 		#  add unfinished cases to attr_lol
 		foreach active_list $active_lol {
-		    lassign $active_list id time_start deck_id
-		    set row_list [list value ${deck_id} label "$name_arr(${id})(ref${deck_id}): Started ${time_start}" ]
+		    lassign $active_list id time_start deck_id cards_completed_count
+		    set row_list [list value ${deck_id} label "$name_arr(${id})(ref${deck_id}): Started ${time_start}, Done: (${cards_completed_count}/$card_ct_arr(${id})" ]
 		    lappend attr_lol $row_list
 		}
 	    }
@@ -194,6 +195,7 @@ if { !$read_p } {
 	frontside {
 	    ns_log Notice "flashcards/www/index.tcl.194 stack_id '$stack_id' deck_id '$deck_id' instance_id '$instance_id' user_id '$user_id'"
 	    if { $stack_id ne "" && $deck_id eq "" } {
+		ad_progress_bar_begin -title "Making a shuffled deck" -message_1 "Shuffling..." -message_2 "Please wait.. Page will continue loading momentarily.."
 		# Start a new deck.
 		#wrap in db_transaction
 		set deck_id [db_nextval flc_id_seq]
@@ -336,17 +338,19 @@ if { !$read_p } {
 		# Build card view 
 		#    user options: skip/pass 
 		#                  flip (to see backside) via form
-
+		append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
+		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
 		append content_html "<pre>\#flashcards.Frontside\#</pre>"
 		append content_html "<h1>$card_title_arr(${front_ref})</h1>\n"
 		append content_html "<p><strong>$content_arr(${front_ref})</strong></p>"
 		append content_html "<br><br>"
-		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
-		append content_html "<br>"
+		append content_html "</div>"
+		append content_html "<br><br>"
+				append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
 		append content_html "<h2>\#flashcards.Backside\#</h2>"
 		append content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
 		append content_html "<h3>\#flashcards.Flip_over_to_see\#</h3>"
-		
+		append content_html "</div>"http://dfcb.github.io/extra-strength-responsive-grids/img/resize.png http://dfcb.github.io/extra-strength-responsive-grids/img/resize.png 
 		# Add the button choices as a form.
 		set f_lol [list \
 			       [list type hidden name stack_id value ${stack_id} label ""] \
@@ -361,6 +365,7 @@ if { !$read_p } {
 			       [list type submit name flip \
 				    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "class: btn; float: right;"] \
 			      ]
+		append content_part2_html "</div></div>"
 	    }
 	}
 	backside {
