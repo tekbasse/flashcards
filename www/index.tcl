@@ -105,8 +105,9 @@ if { !$read_p } {
 
 	    # Make this a radio list:
 	    set carddeck_lol [list ]
+	    set attr_lol [list ]
 	    if { [llength $stacks_lol] > 0 } {
-		set attr_lol [list ]
+
 		foreach stack_list $stacks_lol {
 		    lassign $stack_list id c_id name_arr(${id}) descr_arr(${id})
 		    # Make a radio list item with a label
@@ -165,11 +166,11 @@ if { !$read_p } {
 				 "\#flashcards.Repeats\#" ]
 	    set table_attrs_list [list border 1]
 	    lappend table_lol $titles_list
-	    if { [llength $stats_lol] < 1 } {
+	    if { [llength $history_lol] < 1 } {
 		set row_list [list "\#flashcards.None\#" "" "" "" "" "" ]
 		lappend table_lol $row_list
 	    } else {    
-		foreach stat_list $stats_lol {
+		foreach history_list $history_lol {
 		    
 		    set stack_id [lindex $stat_list 0]
 		    set name $name_arr(${stack_id})
@@ -312,10 +313,10 @@ if { !$read_p } {
 			       [list type hidden name stack_id value ${stack_id} label ""] \
 			       [list type hidden name content_id value ${content_id} label "" ] \
 			       [list type hidden name card_id value ${card_id} label "" ] \
-			       [list type hidden name back_value value "${content_arr(${back_ref})" label "" ] \
-			       [list type hidden name back_title value "${card_title_arr(${back_ref})" label "" ] \
-			       [list type hidden name front_value value "${content_arr(${front_ref})" label "" ] \
-			       [list type hidden name front_title value "${card_title_arr(${front_ref})" label "" ] \
+			       [list type hidden name back_value value "$content_arr(${back_ref})" label "" ] \
+			       [list type hidden name back_title value "$card_title_arr(${back_ref})" label "" ] \
+			       [list type hidden name front_value value "$content_arr(${front_ref})" label "" ] \
+			       [list type hidden name front_title value "$card_title_arr(${front_ref})" label "" ] \
 			       [list type submit name skip \
 				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "class: btn; float: left;"] \
 			       [list type submit name flip \
