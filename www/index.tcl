@@ -21,7 +21,7 @@ if { !$read_p } {
     
     # defaults
     set field_list [list stack_id card_id content_id page flip skip pop out back_value back_title front_value front_title]
-    foreach f field_list {
+    foreach f $field_list {
 	set input_array(${f}) ""
 	set ${f} ""
     }
@@ -115,30 +115,26 @@ if { !$read_p } {
 		    # if incomplete: stack, started x, continue
 
 		    # First, new stacks
-		    set row_lol [list \
+		    set row_list [list \
 				     value ${id} label \
 				     "$name_arr(${id}): $descr_arr(${id})" ]
-		    append attr_lol $row_list
+		    lappend attr_lol $row_list
 		}
 	    }
 	    if {  [llength $active_lol] > 0 } {
 		#  add unfinished cases to attr_lol
 		foreach active_list $active_lol {
 		    lassign $active_list id time_start
-		    set row_list [list \
-				      value ${id} label \
-				      "$name_arr(${id}): Started ${time_start}" ]
-		    append attr_lol $row_list
+		    set row_list [list value ${id} label "$name_arr(${id}): Started ${time_start}" ]
+		    lappend attr_lol $row_list
 		}
 	    }
 	    if { [llength $attr_lol ] > 0 } {
+		set row_list [list type radio name stack_id value $attr_lol ]
+		lappend f_lol $row_list
+		set row_list [list type submit name submit value "\#flashcards.Start\#" datatype text label ""]
 		
-		append f_lol [list type radio \
-				  name stack_id \
-				  value $attr_lol ]
-		append f_lol [list type submit name submit \
-				  value "\#flashcards.Start\#" datatype text label ""]
-	    } else {
+		lappend f_lol $row_list	    } else {
 		set form_html "\#flashcards.None\#"
 	    }
 
@@ -176,7 +172,7 @@ if { !$read_p } {
 		    set name $name_arr(${stack_id})
 		    
 		    set row_list [lreplace $stat_list 0 0 $name]
-		    append table_lol $row_list
+		    lappend table_lol $row_list
 		}
 	    }
 	    
@@ -374,7 +370,8 @@ if { !$read_p } {
 
     # build form
     # if f_lol, is empty, skip building a form.
-    if { [llength $f_lol] > 0 } {
+    ns_log Notice "flashcards/www/index.tcl.377: f_lol '${f_lol}'"
+    if { [llength $f_lol ] > 0 } {
 	#  append form_html if it already exists.
 	append content_html $form_html
 	set form_html ""
