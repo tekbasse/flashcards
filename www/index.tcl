@@ -20,7 +20,7 @@ if { !$read_p } {
 } else {
     
     # defaults
-    set field_list [list stack_id card_id content_id page flip skip pop keep back_value back_title front_value front_title]
+    set field_list [list stack_id deck_id card_id content_id page flip skip pop keep back_value back_title front_value front_title]
     foreach f $field_list {
 	set input_array(${f}) ""
 	set ${f} ""
@@ -42,8 +42,12 @@ if { !$read_p } {
     
     if { $form_submitted_p } {
 	# Get possible inputs
+	ns_log Notice "flashcards/www/index.tcl.45 input_array '[array get input_array ]"
 	if { [qf_is_natural_number $input_array(stack_id) ] } {
 	    set stack_id $input_array(stack_id)
+	}
+	if { [qf_is_natural_number $input_array(deck_id) ] } {
+	    set deck_id $input_array(deck_id)
 	}
 	if { [qf_is_natural_number $input_array(card_id) ] } {
 	    set card_id $input_array(card_id)
@@ -65,10 +69,10 @@ if { !$read_p } {
 	}
 	
 	# Determine mode, set mode to: index, frontside, backside
-	if { $skip_p || $pop_p || $keep_p } {
-	    set mode frontside
+	if { $skip_p || $pop_p || $keep_p || ( $page eq "frontside" && $stack_id ne "")  } {
+	    set mode "frontside"
 	} elseif { $flip_p && $card_id ne "" && $stack_id ne "" } {
-	    set mode backside
+	    set mode "backside"
 	}
     }
 
@@ -85,7 +89,7 @@ if { !$read_p } {
     
     # Determine if displaying front or back side of card.
     # and mode of display.
-    
+    ns_log Notice "flashcards/www/index.tcl.88: mode '${mode}' "
     # implement mode via switch, which sets  up page and parameters for form.
     switch -exact -- $mode {
 	index {
@@ -96,7 +100,8 @@ if { !$read_p } {
 
 	    set active_lol [db_list_of_lists flc_user_stats_r {
 		select stack_id,
-		time_start
+		time_start,
+		deck_id
 		from flc_user_stats 
 		where instance_id=:instance_id 
 		and user_id=:user_id
@@ -116,25 +121,27 @@ if { !$read_p } {
 
 		    # First, new stacks
 		    set row_list [list \
-				     value ${id} label \
-				     "$name_arr(${id}): $descr_arr(${id})" ]
+				      value ${id} label \
+				      "$name_arr(${id}): $descr_arr(${id})" ]
 		    lappend attr_lol $row_list
 		}
 	    }
 	    if {  [llength $active_lol] > 0 } {
 		#  add unfinished cases to attr_lol
 		foreach active_list $active_lol {
-		    lassign $active_list id time_start
-		    set row_list [list value ${id} label "$name_arr(${id}): Started ${time_start}" ]
+		    lassign $active_list id time_start deck_id
+		    set row_list [list value ${deck_id} label "$name_arr(${id}): Started ${time_start}" ]
 		    lappend attr_lol $row_list
 		}
 	    }
 	    if { [llength $attr_lol ] > 0 } {
 		set row_list [list type radio name stack_id value $attr_lol ]
 		lappend f_lol $row_list
-		set row_list [list type submit name submit value "\#flashcards.Start\#" datatype text label ""]
-		
-		lappend f_lol $row_list	    } else {
+		set row_list [list type submit name start value "\#flashcards.Start\#" datatype text label ""]		
+		lappend f_lol $row_list
+		set row_list [list type hidden name page value frontside label "" ]
+		lappend f_lol $row_list
+	    } else {
 		set form_html "\#flashcards.None\#"
 	    }
 
@@ -168,10 +175,10 @@ if { !$read_p } {
 	    } else {    
 		foreach history_list $history_lol {
 		    
-		    set stack_id [lindex $stat_list 0]
+		    set stack_id [lindex $history_list 0]
 		    set name $name_arr(${stack_id})
 		    
-		    set row_list [lreplace $stat_list 0 0 $name]
+		    set row_list [lreplace $history_list 0 0 $name]
 		    lappend table_lol $row_list
 		}
 	    }
@@ -184,13 +191,46 @@ if { !$read_p } {
 	    
 	}
 	frontside {
+	    ns_log Notice "flashcards/www/index.tcl.194 stack_id '$stack_id' deck_id '$deck_id' instance_id '$instance_id' user_id '$user_id'"
+	    if { $stack_id ne "" && $deck_id eq "" } {
+		# Start a new deck.
+		#wrap in db_transaction
+		set deck_id [db_nextval flc_id_seq]
+		# Populate flc_user_stack
+		# get/shuffle list of card_id
+		set card_id_list [db_list flc_card_stack_card_rN5 {
+		    select card_id from flc_card_stack_card
+		    where instance_id=:instance_id and
+		    stack_id=:stack_id} ]
+		set card_id_shuffled_list [acc_fin::shuffle_list $card_id_list ]
+		# then:
+		set order_id 0
+		set count 1
+		set factor [llength $card_id_shuffled_list ]
+		foreach card_id $card_id_shuffled_list {
+		    db_dml flc_user_stack_c3 { insert into flc_user_stack
+			(deck_id,card_id,order_id,instance_id,user_id)
+			values (:deck_id,:card_id,:order_id,:instance_id,:user_id)
+		    }
+		    incr order_id $factor
+		    incr count
+		}
+		# Populate flc_user_stats
+		set time_start [qf_clock_format [clock seconds]]
+		db_dml flc_user_stats_c3 { insert into flc_user_stats
+		    (stack_id,deck_id,time_start,cards_completed_count,cards_remaining_count,user_id,instance_id)
+		    values (:stack_id,:deck_id,:time_start,'0',:count,:user_id,:instance_id)
+		    
+		}
+	    }
+	    
 	    # increase view_count
 	    set view_count ""
-	    db1row flc_user_stack_r4 { select view_count
+	    db_1row flc_user_stack_r4 { select count(*) as view_count
 		from flc_user_stack where
 		instance_id=:instance_id and
 		user_id=:user_id and
-		stack_id=:stack_id and
+		deck_id=:deck_id and
 		card_id=:card_id and
 		done_p !='t' }
 	    if { $view_count eq "" } {
@@ -201,7 +241,7 @@ if { !$read_p } {
 		set view_count=:view_count where
 		instance_id=:instance_id and
 		user_id=:user_id and
-		stack_id=:stack_id and
+		deck_id=:deck_id and
 		card_id=:card_id and
 		done_p !='t' }
 	    
@@ -212,17 +252,17 @@ if { !$read_p } {
 		db_dml flc_user_stack_u1 { update flc_user_stack
 		    set done_p = 't' where
 		    instance_id=:instance_id and
-		    stack_id=:stack_id and
+		    deck_id=:deck_id and
 		    card_id=:card_id and
 		    user_id=:user_id }
 	    }
 	    if { $keep_p } {
 		# Put the card back in the deck, in a random place.
 		# Get current order_id 
-		db1row { select order_id
+		db_1row { select order_id
 		    from flc_user_stack
 		    where instance_id=:instance_id and
-		    stack_id=:stack_id and
+		    deck_id=:deck_id and
 		    card_id=:card_id and
 		    user_id=:user_id and
 		    done_p != 't' }
@@ -232,7 +272,7 @@ if { !$read_p } {
 		    select max( order_id) as order_id_last
 		    from flc_user_stack
 		    where instance_id=:instance_id and
-		    stack_id=:stack_id and
+		    deck_id=:deck_id and
 		    user_id=:user_id and
 		    done_p !='t' }
 		# choose a random number inbetween
@@ -243,7 +283,7 @@ if { !$read_p } {
 		db_dml flc_user_stack_u2 { update flc_user_stack
 		    set order_id=:order_id_new where
 		    instance_id=:instance_id and
-		    stack_id=:stack_id and
+		    deck_id=:deck_id and
 		    card_id=:card_id and
 		    user_id=:user_id }
 	    }
@@ -257,7 +297,7 @@ if { !$read_p } {
 		select card_id from flc_user_stack where
 		instance_id=:instance_id and
 		user_id=:user_id and
-		stack_id=:stack_id and
+		deck_id=:deck_id and
 		done_p!='t'
 		order by order_id asc limit 1 } ]
 	    if { !$card_id_exists_p } {
@@ -319,58 +359,59 @@ if { !$read_p } {
 				    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "class: btn; float: right;"] \
 			      ]
 	    }
-	    backside {
-		# additional input validation for this mode
-		if { [qf_is_natural_number $input_array(content_id) ] } {
-		    set content_id $input_array(content_id)
-		}
-		if { [hf_are_safe_textarea_characters_q $input_array(back_value) ] } {
-		    set back_value $input_array(back_value)
-		}
-		if { [hf_are_safe_textarea_characters_q $input_array(back_title) ] } {
-		    set back_title $input_array(back_title)
-		}
-		if { [hf_are_safe_textarea_characters_q $input_array(front_value) ] } {
-		    set back_value $input_array(front_value)
-		}
-		if { [hf_are_safe_textarea_characters_q $input_array(front_title) ] } {
-		    set back_title $input_array(front_title)
-		}
-		# display back card,
-		#    requires:
-		#         stack_id, content_id, card_id, back_value, back_title, front_value, front_title
-		# These values should already have been passed
-		# via mode: frontside
-		
-		append content_html "<pre>\#flashcards.Frontside\#</pre>"
-		append content_html "<h1>$front_title</h1>\n"
-		append content_html "<p><strong>$front_value</strong></p>"
-		append content_html "<br><br>"
-		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
-		append content_html "<br>"
-		append content_html "<h2>\#flashcards.Backside\#</h2>"
-		append content_html "<p><strong>${back_value}</strong></p>"
-		
-		#    user options:
-		#                 Keep put/push back in stack
-		#                 Pop from stack
-		# Add the button choices as a form.
-		set f_lol [list \
-			       [list type hidden name stack_id value ${stack_id} label ""] \
-			       [list type hidden name card_id value ${card_id} label "" ] \
-			       [list type submit name skip \
-				    value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn; float: left;"] \
-			       [list type submit name flip \
-				    value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn; float: right;"] \
-			      ]
-		
+	}
+	backside {
+	    # additional input validation for this mode
+	    if { [qf_is_natural_number $input_array(content_id) ] } {
+		set content_id $input_array(content_id)
 	    }
+	    if { [hf_are_safe_textarea_characters_q $input_array(back_value) ] } {
+		set back_value $input_array(back_value)
+	    }
+	    if { [hf_are_safe_textarea_characters_q $input_array(back_title) ] } {
+		set back_title $input_array(back_title)
+	    }
+	    if { [hf_are_safe_textarea_characters_q $input_array(front_value) ] } {
+		set back_value $input_array(front_value)
+	    }
+	    if { [hf_are_safe_textarea_characters_q $input_array(front_title) ] } {
+		set back_title $input_array(front_title)
+	    }
+	    # display back card,
+	    #    requires:
+	    #         stack_id, content_id, card_id, back_value, back_title, front_value, front_title
+	    # These values should already have been passed
+	    # via mode: frontside
+	    
+	    append content_html "<pre>\#flashcards.Frontside\#</pre>"
+	    append content_html "<h1>$front_title</h1>\n"
+	    append content_html "<p><strong>$front_value</strong></p>"
+	    append content_html "<br><br>"
+	    append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
+	    append content_html "<br>"
+	    append content_html "<h2>\#flashcards.Backside\#</h2>"
+	    append content_html "<p><strong>${back_value}</strong></p>"
+	    
+	    #    user options:
+	    #                 Keep put/push back in stack
+	    #                 Pop from stack
+	    # Add the button choices as a form.
+	    set f_lol [list \
+			   [list type hidden name stack_id value ${stack_id} label ""] \
+			   [list type hidden name card_id value ${card_id} label "" ] \
+			   [list type submit name skip \
+				value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn; float: left;"] \
+			   [list type submit name flip \
+				value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn; float: right;"] \
+			  ]
+	    
 	}
     }
 
+
     # build form
     # if f_lol, is empty, skip building a form.
-    ns_log Notice "flashcards/www/index.tcl.377: f_lol '${f_lol}'"
+    
     if { [llength $f_lol ] > 0 } {
 	#  append form_html if it already exists.
 	append content_html $form_html
@@ -381,7 +422,7 @@ if { !$read_p } {
 	    -fields_ordered_list_name qf_fields_ordered_list \
 	    -array_name f_arr \
 	    -ignore_parse_issues_p 0
-
+	
 	set validated_p [qfo_2g \
 			     -form_id 20200325 \
 			     -fields_ordered_list $qf_fields_ordered_list \
@@ -389,10 +430,10 @@ if { !$read_p } {
 			     -inputs_as_array input_array \
 			     -form_submitted_p $form_submitted_p \
 			     -form_varname form_html ]
-
+	
 	append content_html $form_html
     }
-
+    
     # append content_part2_html if it already exists.
     if { [info exists content_part2_html ] } {
 	append content_html $content_part2_html

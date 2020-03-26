@@ -49,11 +49,12 @@ create index flc_card_stack_card_card_id_idx on flc_card_stack_card (card_id);
 create index flc_card_stack_card_stack_id_idx on flc_card_stack_card (stack_id);
 
 CREATE TABLE flc_user_stack (
+       -- User decks are deck_id based on a generic stack_id
        instance_id integer,
        user_id integer,
 
-       -- references to build deck for user
-       stack_id integer,
+       -- references to build deck/stack for user
+       deck_id integer,
        card_id integer,
        
        -- shuffling done when user stack created.
@@ -76,10 +77,12 @@ CREATE TABLE flc_user_stats (
        instance_id integer,
        user_id integer,
        stack_id integer,
+       deck_id integer,
        time_start timestamptz,
        time_end timestamptz,
        cards_completed_count integer,
        cards_remaining_count integer,
+       -- repeats_count = total_views - total_cards
        repeats_count integer
 );
 
