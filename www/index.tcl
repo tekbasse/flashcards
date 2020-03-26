@@ -115,8 +115,8 @@ if { !$read_p } {
 
 		    # First, new stacks
 		    set row_lol [list \
-				      value ${id} label \
-				      "$name_arr(${id}): $descr_arr(${id})" ]
+				     value ${id} label \
+				     "$name_arr(${id}): $descr_arr(${id})" ]
 		    append attr_lol $row_list
 		}
 	    }
@@ -140,6 +140,50 @@ if { !$read_p } {
 	    } else {
 		set form_html "\#flashcards.None\#"
 	    }
+
+	    # At bottom of page,
+	    # make a table of user history for complete cases.
+	    set history_lol [db_list_of_lists flc_user_stats_r {
+		select stack_id,
+		time_start,
+		time_end,
+		cards_completed_count,
+		cards_remaining_count,
+		repeats_count
+		from flc_user_stats 
+		where instance_id=:instance_id 
+		and user_id=:user_id
+		and time_end is null
+		order by time_start desc } ]
+	    
+	    set table_lol [list]
+	    set titles_list [list "\#flashcards.Started\#" \
+				 "\#flashcards.Stack\#" \
+				 "\#flashcards.Finished\#" \
+				 "\#flashcards.Completed\#" \
+				 "\#flashcards.Remaining\#" \
+				 "\#flashcards.Repeats\#" ]
+	    set table_attrs_list [list border 1]
+	    lappend table_lol $titles_list
+	    if { [llength $stats_lol] < 1 } {
+		set row_list [list "\#flashcards.None\#" "" "" "" "" "" ]
+		lappend table_lol $row_list
+	    } else {    
+		foreach stat_list $stats_lol {
+		    
+		    set stack_id [lindex $stat_list 0]
+		    set name $name_arr(${stack_id})
+		    
+		    set row_list [lreplace $stat_list 0 0 $name]
+		    append table_lol $row_list
+		}
+	    }
+	    
+	    set table_html [qss_list_of_lists_to_html_table \
+				$table_lol \
+				$table_attrs_list]
+	    
+	    set content_part2_html "<br><br><h3>Your history</h3>${table_html}"
 	    
 	}
 	frontside {
@@ -227,7 +271,7 @@ if { !$read_p } {
 		# Get card data
 		set deck_list [lsearch -exact -integer -inline -index 0 $stacks_lol $stack_id]
 		lassign $deck_list d_stack_id content_id deck_name deck_description
-		    
+		
 		db_1row flc_card_stack_card_r1 {
 		    select row_id,front_ref,back_ref
 		    from flc_card_stack_card where
@@ -259,8 +303,8 @@ if { !$read_p } {
 		append content_html "<br><br>"
 		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
 		append content_html "<br>"
-		append_content_html "<h2>\#flashcards.Backside\#</h2>"
-		append_content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
+		append content_html "<h2>\#flashcards.Backside\#</h2>"
+		append content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
 		append content_html "<h3>\#flashcards.Flip_over_to_see\#</h3>"
 		
 		# Add the button choices as a form.
@@ -274,8 +318,8 @@ if { !$read_p } {
 			       [list type hidden name front_title value "${card_title_arr(${front_ref})" label "" ] \
 			       [list type submit name skip \
 				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "class: btn; float: left;"] \
-			        [list type submit name flip \
-				     value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "class: btn; float: right;"] \
+			       [list type submit name flip \
+				    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "class: btn; float: right;"] \
 			      ]
 	    }
 	    backside {
@@ -307,9 +351,9 @@ if { !$read_p } {
 		append content_html "<br><br>"
 		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
 		append content_html "<br>"
-		append_content_html "<h2>\#flashcards.Backside\#</h2>"
+		append content_html "<h2>\#flashcards.Backside\#</h2>"
 		append content_html "<p><strong>${back_value}</strong></p>"
-	    
+		
 		#    user options:
 		#                 Keep put/push back in stack
 		#                 Pop from stack
@@ -320,63 +364,40 @@ if { !$read_p } {
 			       [list type submit name skip \
 				    value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn; float: left;"] \
 			       [list type submit name flip \
-				     value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn; float: right;"] \
+				    value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn; float: right;"] \
 			      ]
 		
 	    }
 	}
     }
 
+    # build form
+    # if f_lol, is empty, skip building a form.
+    if { [llength $f_lol] > 0 } {
+	#  append form_html if it already exists.
+	append content_html $form_html
+	set form_html ""
+	
+	::qfo::form_list_def_to_array \
+	    -list_of_lists_name f_lol \
+	    -fields_ordered_list_name qf_fields_ordered_list \
+	    -array_name f_arr \
+	    -ignore_parse_issues_p 0
+
+	set validated_p [qfo_2g \
+			     -form_id 20200325 \
+			     -fields_ordered_list $qf_fields_ordered_list \
+			     -fields_array f_arr \
+			     -inputs_as_array input_array \
+			     -form_submitted_p $form_submitted_p \
+			     -form_varname form_html ]
+
+	append content_html $form_html
+    }
+
+    # append content_part2_html if it already exists.
+    if { [info exists content_part2_html ] } {
+	append content_html $content_part2_html
+    }
 }
-
-
-# build form
-#  append form_html if it already exists.
-# if f_lol, is empty, skip building a form.
-
-    append content_html <br> <br> "<h3>History</h3>" \n $avail_decks_html \n
-# At bottom of page,
-    # make a table of user history for complete cases.
-    set history_lol [db_list_of_lists flc_user_stats_r {
-	select stack_id,
-	time_start,
-	time_end,
-	cards_completed_count,
-	cards_remaining_count,
-	repeats_count
-	from flc_user_stats 
-	where instance_id=:instance_id 
-	and user_id=:user_id
-	and time_end is null
-	order by time_start desc } ]
-    
-
-	set table_lol [list]
-	    set titles_list [list "\#flashcards.Started\#" \
-				 "\#flashcards.Stack\#" \
-				 "\#flashcards.Finished\#" \
-				 "\#flashcards.Completed\#" \
-				 "\#flashcards.Remaining\#" \
-				 "\#flashcards.Repeats\#" ]
-	    set table_attrs_list [list border 1]
-	    lappend table_lol $titles_list
-	    if { [llength $stats_lol] < 1 } {
-		set row_list [list "\#flashcards.None\#" "" "" "" "" "" ]
-		lappend table_lol $row_list
-	    } else {    
-		foreach stat_list $stats_lol {
-		    
-		    set stack_id [lindex $stat_list 0]
-		    set name $name_arr(${stack_id})
-
-		    set row_list [lreplace $stat_list 0 0 $name]
-		    append table_lol $row_list
-		}
-	    }
-
-	    set table_html [qss_list_of_lists_to_html_table \
-				$table_lol \
-				$table_attrs_list]
-
-	    set content_part2_html "<br><br><h3>Your history</h3>${table_html}"
 
