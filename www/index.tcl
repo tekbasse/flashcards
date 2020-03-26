@@ -20,7 +20,7 @@ if { !$read_p } {
 } else {
     
     # defaults
-    set field_list [list stack_id card_id content_id page flip skip pop out back_value back_title front_value front_title]
+    set field_list [list stack_id card_id content_id page flip skip pop keep back_value back_title front_value front_title]
     foreach f $field_list {
 	set input_array(${f}) ""
 	set ${f} ""
@@ -67,7 +67,7 @@ if { !$read_p } {
 	# Determine mode, set mode to: index, frontside, backside
 	if { $skip_p || $pop_p || $keep_p } {
 	    set mode frontside
-	} elseif { $flip && $card_id ne "" && $stack_id ne "" } {
+	} elseif { $flip_p && $card_id ne "" && $stack_id ne "" } {
 	    set mode backside
 	}
     }
