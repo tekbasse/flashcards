@@ -75,18 +75,48 @@ if { !$read_p } {
 	    set keep_p 1
 	}
 	
+	# First we must determine if stack_id is a stack_id or deck_id
+	# from index (where both are referred to as stack_id in
+	# the radio buttons.
+	# This fixes stack_id/deck_id misassignments
+	ns_log Notice "/flashcards/index.260 stack_id '${stack_id}'"
+	set stack_id_orig $stack_id
+	db_1row flc_user_stats_r5 { select stack_id, deck_id
+	    from flc_user_stats where
+	    ( deck_id=:stack_id or
+	      stack_id=:stack_id ) and
+	    user_id=:user_id and
+	    instance_id=:instance_id limit 1 }
+	if { $stack_id == $stack_id_orig } {
+	    # remove dangling id
+	    set deck_id ""
+	}
+	ns_log Notice "/flashcards/index.267 stack_id '${stack_id}' deck_id '${deck_id}'"
+	# frontside and backside require deck_id and card_id
+	# newdeck requires stack_id
+	# index requires neither
+	
+	ns_log Notice "/flashcards/index.tcl.77 skip_p '$skip_p' flip_p '$flip_p' pop_p '$pop_p' keep_p '$keep_p' page '$page' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
+	
+	# Determine if displaying front or back side of card.
+	# and mode of display. ie
 	# Determine mode, set mode to: index, frontside, backside, or newdeck
 	if { $skip_p || $pop_p || $keep_p || $page eq "frontside"  } {
-	    if { $stack_id ne "" && $card_id ne "" } {
+	    if { $deck_id ne "" && $card_id ne "" } {
 		set mode "frontside"
 	    } else {
 		set mode "newdeck"
+		if { $frompage eq $mode } {
+		    set mode "frontside"
+		    ns_log Warning "/flashcards/index.tcl.111 Tried to assign a newdeck to a newdeck. Re-assigning to 'frontside'"
+		}
 	    }
-	} elseif { $flip_p && $card_id ne "" && $stack_id ne "" } {
+	} elseif { $flip_p && $card_id ne "" && $deck_id ne "" } {
 	    set mode "backside"
 	}
     }
-
+    ns_log Notice "flashcards/www/index.tcl.88: mode '${mode}' "
+    
     # Common to more than one mode:
     set stacks_lol [db_list_of_lists flc_card_stack_r {
 	select stack_id, content_id, name, description, card_count
@@ -98,9 +128,7 @@ if { !$read_p } {
     set card_title_arr(t) "\#flashcards.Term\#"
     set card_title_arr(d) "\#flashcards.Description\#"
 
-    # Determine if displaying front or back side of card.
-    # and mode of display.
-    ns_log Notice "flashcards/www/index.tcl.88: mode '${mode}' "
+
     # implement mode via switch, which sets  up page and parameters for form.
     switch -exact -- $mode {
 	index {
@@ -253,7 +281,7 @@ if { !$read_p } {
 
 	}
 	frontside {
-	    
+		
 	    # increase view_count
 	    set view_count ""
 	    ns_log Notice "flashcards/www/index.tcl.259 instance_id '$instance_id' user_id '$user_id' deck_id '$deck_id' card_id '$card_id'"
@@ -429,7 +457,7 @@ if { !$read_p } {
 	    append content_html "<br><br>"
 	    append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
 	    append content_html "<pre>\#flashcards.Backside\#</pre>"
-	    append content_html "<p><strong>${back_title}</strong></p>"
+	    append content_html "<p>${back_title}</p>"
 	    append content_html "<p><strong>${back_value}</strong></p>"
 	    append content_html "</div>"
 	    
