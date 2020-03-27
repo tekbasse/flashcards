@@ -8,8 +8,11 @@ set read_p [permission::permission_p \
 		-privilege read]
 
 set error_p 0
+# adp required values for all cases
 set form_html ""
 set content_html ""
+set mode ""
+
 set user_message_list [list ]
 set user_message_html ""
 set page_mode_list [list "frontside" "backside" "index" "newdeck"]
@@ -149,7 +152,7 @@ if { !$read_p } {
 		lappend f_lol $row_list
 		set row_list [list type submit name start value "\#flashcards.Start\#" datatype text label ""]
 		lappend f_lol $row_list
-		set row_list [list type hidden name page value frontside label "" ]
+		set row_list [list type hidden name page value frontside ]
 		lappend f_lol $row_list
 	    } else {
 		set form_html "\#flashcards.None\#"
@@ -235,21 +238,19 @@ if { !$read_p } {
 		}
 		set card_id [lindex $card_id_shuffled_list 0]
 	    }
-	    set page frontside
-	    set frompage newdeck
-	    # Cannot use f_lol paradigm here, because
-	    # a page is already started.
-	    # relying on content_hmtl means that
-	    # page master will follow the Shuffling message.
-	    # To get around this issue:
-	    ad_returnredirect "/flashcards/index?card_id=${card_id}&stack_id=${stack_id}&deck_id=${deck_id}&page=${page}&frompage=${frompage}"
-	    # Note: Standard use of ad_returnredirect does
-	    # not pass variables to qf_input_as_array. Apparently
-	    # they use two different paradigms to pass variables.
-	    # qf_input_as_array relies on common post/get
-	    # whereas export_vars uses OpenACS paradigm.
 
-	    ad_script_abort
+	    set frompage newdeck
+	    #ad_returnredirect "/flashcards/index?card_id=${card_id}&stack_id=${stack_id}&deck_id=${deck_id}&page=${page}&frompage=${frompage}"
+	    #ad_script_abort
+	    set f_lol [list \
+			   [list type hidden name card_id value ${card_id} ] \
+			   [list type hidden name stack_id value ${stack_id} ]\
+			   [list type hidden name deck_id value ${deck_id} ] \
+			   [list type hidden name page value frontside ] \
+			   [list type hidden name frompage value $frompage ] \
+			   [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "class: btn; float: left;"] \
+			      ]
+
 	}
 	frontside {
 	    
@@ -378,13 +379,14 @@ if { !$read_p } {
 		append content_html "</div>"
 		# Add the button choices as a form.
 		set f_lol [list \
-			       [list type hidden name stack_id value ${stack_id} label ""] \
-			       [list type hidden name content_id value ${content_id} label "" ] \
-			       [list type hidden name card_id value ${card_id} label "" ] \
-			       [list type hidden name back_value value "$content_arr(${back_ref})" label "" ] \
-			       [list type hidden name back_title value "$card_title_arr(${back_ref})" label "" ] \
-			       [list type hidden name front_value value "$content_arr(${front_ref})" label "" ] \
-			       [list type hidden name front_title value "$card_title_arr(${front_ref})" label "" ] \
+			       [list type hidden name stack_id value ${stack_id} ] \
+			       [list type hidden name content_id value ${content_id} ] \
+			       [list type hidden name card_id value ${card_id} ] \
+			       [list type hidden name back_value value "$content_arr(${back_ref})" ] \
+			       [list type hidden name back_title value "$card_title_arr(${back_ref})" ] \
+			       [list type hidden name front_value value "$content_arr(${front_ref})" ] \
+			       [list type hidden name front_title value "$card_title_arr(${front_ref})" ] \
+			       [list type hidden name frompage value "newdeck"] \
 			       [list type submit name skip \
 				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "class: btn; float: left;"] \
 			       [list type submit name flip \
@@ -431,8 +433,8 @@ if { !$read_p } {
 	    # Add the button choices as a form.
 	    set form_submitted_p 0
 	    set f_lol [list \
-			   [list type hidden name stack_id value ${stack_id} label ""] \
-			   [list type hidden name card_id value ${card_id} label "" ] \
+			   [list type hidden name stack_id value ${stack_id} ] \
+			   [list type hidden name card_id value ${card_id} ] \
 			   [list type submit name skip \
 				value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn; float: left;"] \
 			   [list type submit name flip \
@@ -448,12 +450,13 @@ if { !$read_p } {
     ns_log Notice "/flashcards/www/index.tcl.442 f_lol '${f_lol}'"
     if { [llength $f_lol ] > 0 } {
 	#  append form_html if it already exists.
-	ns_log Notice "/flashcards/www/index.tcl.445 form_submited_p '${form_submitted_p}' form_html '${form_html}'"
+
 	append content_html $form_html
 	set form_html ""
 	# adding exception for newdeck passing to frontside
 	if { $frompage eq "newdeck" } {
 	    set form_submitted_p 0
+	    set validated_p 0
 	}
 	
 	::qfo::form_list_def_to_array \
@@ -461,7 +464,7 @@ if { !$read_p } {
 	    -fields_ordered_list_name qf_fields_ordered_list \
 	    -array_name f_arr \
 	    -ignore_parse_issues_p 0
-	ns_log Notice "/flashcards/www/index.tcl.455 array get f_arr '[array get f_arr]'"
+
 	set validated_p [qfo_2g \
 			     -form_id 20200325 \
 			     -fields_ordered_list $qf_fields_ordered_list \
@@ -469,7 +472,7 @@ if { !$read_p } {
 			     -inputs_as_array input_array \
 			     -form_submitted_p $form_submitted_p \
 			     -form_varname form_html ]
-	ns_log Notice "/flashcards/www/index.tcl.462 validated_p '${validated_p}' form_submited_p '${form_submitted_p}' form_html '${form_html}'"
+
 	append content_html $form_html
     }
     
