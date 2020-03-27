@@ -88,7 +88,7 @@ if { !$read_p } {
     }
 
     # Common to more than one mode:
-    set stacks_lol [db_list_of_lists flc_stack_r {
+    set stacks_lol [db_list_of_lists flc_card_stack_r {
 	select stack_id, content_id, name, description, card_count
 	from flc_card_stack
 	where instance_id=:instance_id
@@ -126,24 +126,24 @@ if { !$read_p } {
 	    if { [llength $stacks_lol] > 0 } {
 
 		foreach stack_list $stacks_lol {
-		    lassign $stack_list id c_id name_arr(${id}) descr_arr(${id}) card_ct_arr(${id})
+		    lassign $stack_list s_id c_id name_arr(${s_id}) descr_arr(${s_id}) card_ct_arr(${s_id})
 		    # Make a radio list item with a label
 		    # if new: stack, description (make a new deck)
 		    # if incomplete: stack, started x, continue
 
 		    # First, new stacks
 		    set row_list [list \
-				      value ${id} label \
-				      "$name_arr(${id})(ref${id}): $descr_arr(${id})" ]
+				      value ${s_id} label \
+				      "$name_arr(${s_id})(ref${s_id}): $descr_arr(${s_id})" ]
 		    lappend attr_lol $row_list
 		}
 	    }
 	    if {  [llength $active_lol] > 0 } {
-		ns_log Notice "active_lol '$active_lol'"
+		ns_log Notice "/flashcards/index.tcl.142 active_lol '$active_lol'"
 		#  add unfinished cases to attr_lol
 		foreach active_list $active_lol {
-		    lassign $active_list id time_start deck_id cards_completed_count
-		    set row_list [list value ${deck_id} label "$name_arr(${id})(ref${deck_id}): Started ${time_start}, Done: (${cards_completed_count}/$card_ct_arr(${id}))" ]
+		    lassign $active_list s_id time_start deck_id cards_completed_count
+		    set row_list [list value ${deck_id} label "$name_arr(${s_id})(ref${deck_id}): Started ${time_start}, Done: (${cards_completed_count}/$card_ct_arr(${s_id}))" ]
 		    lappend attr_lol $row_list
 		}
 	    }
@@ -256,7 +256,7 @@ if { !$read_p } {
 	    
 	    # increase view_count
 	    set view_count ""
-	    ns_log Notice "flashcards/www/index.tcl instance_id '$instance_id' user_id '$user_id' deck_id '$deck_id' card_id '$card_id'"
+	    ns_log Notice "flashcards/www/index.tcl.259 instance_id '$instance_id' user_id '$user_id' deck_id '$deck_id' card_id '$card_id'"
 	    db_1row flc_user_stack_r4 { select view_count
 		from flc_user_stack where
 		instance_id=:instance_id and
@@ -382,6 +382,7 @@ if { !$read_p } {
 			       [list type hidden name stack_id value ${stack_id} ] \
 			       [list type hidden name content_id value ${content_id} ] \
 			       [list type hidden name card_id value ${card_id} ] \
+			       [list type hidden name deck_id value ${deck_id} ] \
 			       [list type hidden name back_value value "$content_arr(${back_ref})" ] \
 			       [list type hidden name back_title value "$card_title_arr(${back_ref})" ] \
 			       [list type hidden name front_value value "$content_arr(${front_ref})" ] \
@@ -407,10 +408,10 @@ if { !$read_p } {
 		set back_title $input_array(back_title)
 	    }
 	    if { [hf_are_safe_textarea_characters_q $input_array(front_value) ] } {
-		set back_value $input_array(front_value)
+		set front_value $input_array(front_value)
 	    }
 	    if { [hf_are_safe_textarea_characters_q $input_array(front_title) ] } {
-		set back_title $input_array(front_title)
+		set front_title $input_array(front_title)
 	    }
 	    # display back card,
 	    #    requires:
@@ -418,14 +419,19 @@ if { !$read_p } {
 	    # These values should already have been passed
 	    # via mode: frontside
 	    
+	    append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
+	    append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
 	    append content_html "<pre>\#flashcards.Frontside\#</pre>"
-	    append content_html "<h1>$front_title</h1>\n"
-	    append content_html "<p><strong>$front_value</strong></p>"
+	    append content_html "<p>${front_title}</p>\n"
+	    append content_html "<p><strong>${front_value}</strong></p>"
+	    append content_html "<br><br>"
+	    append content_html "</div>"
 	    append content_html "<br><br>"
 	    append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
-	    append content_html "<br>"
-	    append content_html "<h2>\#flashcards.Backside\#</h2>"
+	    append content_html "<pre>\#flashcards.Backside\#</pre>"
+	    append content_html "<p><strong>${back_title}</strong></p>"
 	    append content_html "<p><strong>${back_value}</strong></p>"
+	    append content_html "</div>"
 	    
 	    #    user options:
 	    #                 Keep put/push back in stack
@@ -435,7 +441,7 @@ if { !$read_p } {
 	    set f_lol [list \
 			   [list type hidden name stack_id value ${stack_id} ] \
 			   [list type hidden name card_id value ${card_id} ] \
-			   [list type submit name skip \
+			   [list type submit name keep \
 				value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn; float: left;"] \
 			   [list type submit name flip \
 				value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn; float: right;"] \
