@@ -23,6 +23,7 @@ CREATE TABLE flc_card_stack (
      -- and is the same for an entire deck.
      content_id integer not null,
      instance_id integer,
+     card_count integer,
      name text,
      description text
 );

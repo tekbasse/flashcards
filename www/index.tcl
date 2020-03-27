@@ -12,7 +12,7 @@ set form_html ""
 set content_html ""
 set user_message_list [list ]
 set user_message_html ""
-set page_mode_list [list "frontside" "backside" "index"]
+set page_mode_list [list "frontside" "backside" "index" "newdeck"]
 
 
 if { !$read_p } {
@@ -39,7 +39,7 @@ if { !$read_p } {
     set f_lol [list ]
     
     set form_submitted_p [qf_get_inputs_as_array input_array]
-    
+    	ns_log Notice "flashcards/www/index.tcl.42 input_array '[array get input_array ]"
     if { $form_submitted_p } {
 	# Get possible inputs
 	ns_log Notice "flashcards/www/index.tcl.45 input_array '[array get input_array ]"
@@ -68,9 +68,13 @@ if { !$read_p } {
 	    set keep_p 1
 	}
 	
-	# Determine mode, set mode to: index, frontside, backside
-	if { $skip_p || $pop_p || $keep_p || ( $page eq "frontside" && $stack_id ne "")  } {
-	    set mode "frontside"
+	# Determine mode, set mode to: index, frontside, backside, or newdeck
+	if { $skip_p || $pop_p || $keep_p || $page eq "frontside"  } {
+	    if { $stack_id ne "" && $card_id ne "" } {
+		set mode "frontside"
+	    } else {
+		set mode "newdeck"
+	    }
 	} elseif { $flip_p && $card_id ne "" && $stack_id ne "" } {
 	    set mode "backside"
 	}
@@ -132,7 +136,7 @@ if { !$read_p } {
 		#  add unfinished cases to attr_lol
 		foreach active_list $active_lol {
 		    lassign $active_list id time_start deck_id cards_completed_count
-		    set row_list [list value ${deck_id} label "$name_arr(${id})(ref${deck_id}): Started ${time_start}, Done: (${cards_completed_count}/$card_ct_arr(${id})" ]
+		    set row_list [list value ${deck_id} label "$name_arr(${id})(ref${deck_id}): Started ${time_start}, Done: (${cards_completed_count}/$card_ct_arr(${id}))" ]
 		    lappend attr_lol $row_list
 		}
 	    }
@@ -192,7 +196,7 @@ if { !$read_p } {
 	    set content_part2_html "<br><br><h3>Your history</h3>${table_html}"
 	    
 	}
-	frontside {
+	newdeck {
 	    ns_log Notice "flashcards/www/index.tcl.194 stack_id '$stack_id' deck_id '$deck_id' instance_id '$instance_id' user_id '$user_id'"
 	    if { $stack_id ne "" && $deck_id eq "" } {
 		ad_progress_bar_begin -title "Making a shuffled deck" -message_1 "Shuffling..." -message_2 "Please wait.. Page will continue loading momentarily.."
@@ -227,6 +231,13 @@ if { !$read_p } {
 		}
 		set card_id [lindex $card_id_shuffled_list 0]
 	    }
+	    set page frontside
+	    ad_returnredirect "/flashcards/index?card_id=${card_id}&stack_id=${stack_id}&deck_id=${deck_id}&page=${page}"
+
+	    #ad_returnredirect "/flashcards/"
+	    ad_script_abort
+	}
+	frontside {
 	    
 	    # increase view_count
 	    set view_count ""
@@ -350,7 +361,7 @@ if { !$read_p } {
 		append content_html "<h2>\#flashcards.Backside\#</h2>"
 		append content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
 		append content_html "<h3>\#flashcards.Flip_over_to_see\#</h3>"
-		append content_html "</div>"http://dfcb.github.io/extra-strength-responsive-grids/img/resize.png http://dfcb.github.io/extra-strength-responsive-grids/img/resize.png 
+		append content_html "</div>"
 		# Add the button choices as a form.
 		set f_lol [list \
 			       [list type hidden name stack_id value ${stack_id} label ""] \

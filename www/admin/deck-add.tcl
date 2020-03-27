@@ -63,9 +63,6 @@ if { $admin_p } {
 		# generate flashcards from content
 		set stack_id [db_nextval flc_id_seq]
 		set content_id [db_nextval flc_id_seq]
-		db_dml flc_card_stack_cr {insert into flc_card_stack
-		    (stack_id,content_id,instance_id,name,description)
-		    values (:stack_id,:content_id,:instance_id,:deck_name,:deck_description) }
 		set card_id 0
 		set row_id 0
 		set card_count 0
@@ -104,6 +101,11 @@ if { $admin_p } {
 		    }
 			    
 		}
+
+		db_dml flc_card_stack_cr {insert into flc_card_stack
+		    (stack_id,content_id,instance_id,name,description,card_count)
+		    values (:stack_id,:content_id,:instance_id,:deck_name,:deck_description,:card_count) }
+		
 
 	    } on_error { set error_p 1 }
 	    if { $error_p } {
