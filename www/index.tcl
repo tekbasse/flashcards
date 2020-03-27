@@ -143,7 +143,7 @@ if { !$read_p } {
 	    if { [llength $attr_lol ] > 0 } {
 		set row_list [list type radio name stack_id value $attr_lol ]
 		lappend f_lol $row_list
-		set row_list [list type submit name start value "\#flashcards.Start\#" datatype text label ""]		
+		set row_list [list type submit name start value "\#flashcards.Start\#" datatype text label ""]
 		lappend f_lol $row_list
 		set row_list [list type hidden name page value frontside label "" ]
 		lappend f_lol $row_list
@@ -232,9 +232,18 @@ if { !$read_p } {
 		set card_id [lindex $card_id_shuffled_list 0]
 	    }
 	    set page frontside
+	    # Cannot use f_lol paradigm here, because
+	    # a page is already started.
+	    # relying on content_hmtl means that
+	    # page master will follow the Shuffling message.
+	    # To get around this issue:
 	    ad_returnredirect "/flashcards/index?card_id=${card_id}&stack_id=${stack_id}&deck_id=${deck_id}&page=${page}"
+	    # Note: Standard use of ad_returnredirect does
+	    # not pass variables to qf_input_as_array. Apparently
+	    # they use two different paradigms to pass variables.
+	    # qf_input_as_array relies on common post/get
+	    # whereas export_vars uses OpenACS paradigm.
 
-	    #ad_returnredirect "/flashcards/"
 	    ad_script_abort
 	}
 	frontside {
