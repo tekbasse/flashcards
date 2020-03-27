@@ -13,6 +13,7 @@ set content_html ""
 set user_message_list [list ]
 set user_message_html ""
 set page_mode_list [list "frontside" "backside" "index" "newdeck"]
+set frompage_mode_list [list "newdeck"]
 
 
 if { !$read_p } {
@@ -20,7 +21,7 @@ if { !$read_p } {
 } else {
     
     # defaults
-    set field_list [list stack_id deck_id card_id content_id page flip skip pop keep back_value back_title front_value front_title]
+    set field_list [list stack_id deck_id card_id content_id page flip skip pop keep back_value back_title front_value front_title frompage]
     foreach f $field_list {
 	set input_array(${f}) ""
 	set ${f} ""
@@ -54,6 +55,9 @@ if { !$read_p } {
 	}
 	if { $input_array(page) in $page_mode_list } {
 	    set page $input_array(page)
+	}
+	if { $input_array(frompage) in $frompage_mode_list } {
+	    set frompage $input_array(frompage)
 	}
 	if { $input_array(flip) ne "" } {
 	    set flip_p 1
@@ -232,12 +236,13 @@ if { !$read_p } {
 		set card_id [lindex $card_id_shuffled_list 0]
 	    }
 	    set page frontside
+	    set frompage newdeck
 	    # Cannot use f_lol paradigm here, because
 	    # a page is already started.
 	    # relying on content_hmtl means that
 	    # page master will follow the Shuffling message.
 	    # To get around this issue:
-	    ad_returnredirect "/flashcards/index?card_id=${card_id}&stack_id=${stack_id}&deck_id=${deck_id}&page=${page}"
+	    ad_returnredirect "/flashcards/index?card_id=${card_id}&stack_id=${stack_id}&deck_id=${deck_id}&page=${page}&frompage=${frompage}"
 	    # Note: Standard use of ad_returnredirect does
 	    # not pass variables to qf_input_as_array. Apparently
 	    # they use two different paradigms to pass variables.
@@ -361,15 +366,15 @@ if { !$read_p } {
 		append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
 		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
 		append content_html "<pre>\#flashcards.Frontside\#</pre>"
-		append content_html "<h1>$card_title_arr(${front_ref})</h1>\n"
+		append content_html "<p>$card_title_arr(${front_ref})</p>\n"
 		append content_html "<p><strong>$content_arr(${front_ref})</strong></p>"
 		append content_html "<br><br>"
 		append content_html "</div>"
 		append content_html "<br><br>"
 				append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
-		append content_html "<h2>\#flashcards.Backside\#</h2>"
+		append content_html "<pre>\#flashcards.Backside\#</pre>"
 		append content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
-		append content_html "<h3>\#flashcards.Flip_over_to_see\#</h3>"
+		append content_html "<p><em>\#flashcards.Flip_over_to_see\#</em></p>"
 		append content_html "</div>"
 		# Add the button choices as a form.
 		set f_lol [list \
@@ -424,6 +429,7 @@ if { !$read_p } {
 	    #                 Keep put/push back in stack
 	    #                 Pop from stack
 	    # Add the button choices as a form.
+	    set form_submitted_p 0
 	    set f_lol [list \
 			   [list type hidden name stack_id value ${stack_id} label ""] \
 			   [list type hidden name card_id value ${card_id} label "" ] \
@@ -439,18 +445,23 @@ if { !$read_p } {
 
     # build form
     # if f_lol, is empty, skip building a form.
-    
+    ns_log Notice "/flashcards/www/index.tcl.442 f_lol '${f_lol}'"
     if { [llength $f_lol ] > 0 } {
 	#  append form_html if it already exists.
+	ns_log Notice "/flashcards/www/index.tcl.445 form_submited_p '${form_submitted_p}' form_html '${form_html}'"
 	append content_html $form_html
 	set form_html ""
+	# adding exception for newdeck passing to frontside
+	if { $frompage eq "newdeck" } {
+	    set form_submitted_p 0
+	}
 	
 	::qfo::form_list_def_to_array \
 	    -list_of_lists_name f_lol \
 	    -fields_ordered_list_name qf_fields_ordered_list \
 	    -array_name f_arr \
 	    -ignore_parse_issues_p 0
-	
+	ns_log Notice "/flashcards/www/index.tcl.455 array get f_arr '[array get f_arr]'"
 	set validated_p [qfo_2g \
 			     -form_id 20200325 \
 			     -fields_ordered_list $qf_fields_ordered_list \
@@ -458,7 +469,7 @@ if { !$read_p } {
 			     -inputs_as_array input_array \
 			     -form_submitted_p $form_submitted_p \
 			     -form_varname form_html ]
-	
+	ns_log Notice "/flashcards/www/index.tcl.462 validated_p '${validated_p}' form_submited_p '${form_submitted_p}' form_html '${form_html}'"
 	append content_html $form_html
     }
     
