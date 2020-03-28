@@ -16,9 +16,12 @@ set mode ""
 
 set user_message_list [list ]
 set user_message_html ""
+# page is the target switch expected to be triggered this time
 set page_mode_list [list "frontside" "backside" "index" "newdeck"]
-set frompage_mode_list [list "newdeck"]
-
+# frompage is the switch that was triggered last time
+set frompage_mode_list $page_mode_list
+# Sometimes a switch will have be determined based on the input
+# from the frompage, so page with be empty in those cases.
 
 if { !$read_p } {
     append content_html "\#flashcards.permission_denied\#"
@@ -113,6 +116,9 @@ if { !$read_p } {
 		if { $frompage eq $mode } {
 		    set mode "frontside"
 		    ns_log Warning "/flashcards/index.tcl.112 Tried to assign a newdeck to a newdeck. Re-assigning to 'frontside'"
+		} elseif { $frompage eq "frontside" } {
+		    ns_log Notice "/flashcards/index.tcl.114 Frontside must have completed the deck."
+		    set mode "index"
 		}
 	    }
 	} elseif { $flip_p && $card_id ne "" && $deck_id ne "" } {
@@ -185,6 +191,7 @@ if { !$read_p } {
 		lappend f_lol $row_list
 		set row_list [list type submit name start value "\#flashcards.Start\#" datatype text label ""]
 		lappend f_lol $row_list
+		set row_list [list type hidden name frompage value index ]
 		set row_list [list type hidden name page value frontside ]
 		lappend f_lol $row_list
 	    } else {
@@ -277,7 +284,7 @@ if { !$read_p } {
 			   [list type hidden name card_id value ${card_id} ] \
 			   [list type hidden name stack_id value ${stack_id} ]\
 			   [list type hidden name deck_id value ${deck_id} ] \
-			   [list type hidden name page value frontside ] \
+			   [list type hidden name page value "frontside" ] \
 			   [list type hidden name frompage value $frompage ] \
 			   [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "class: btn; float: left;"] \
 			      ]
@@ -321,7 +328,7 @@ if { !$read_p } {
 	    if { $keep_p } {
 		# Put the card back in the deck, in a random place.
 		# Get current order_id 
-		db_1row { select order_id
+		db_1row flc_user_stack_r6 { select order_id
 		    from flc_user_stack
 		    where instance_id=:instance_id and
 		    deck_id=:deck_id and
@@ -418,7 +425,7 @@ if { !$read_p } {
 			       [list type hidden name back_title value "$card_title_arr(${back_ref})" ] \
 			       [list type hidden name front_value value "$content_arr(${front_ref})" ] \
 			       [list type hidden name front_title value "$card_title_arr(${front_ref})" ] \
-			       [list type hidden name frompage value "newdeck"] \
+			       [list type hidden name frompage value "frontside"] \
 			       [list type submit name skip \
 				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "class: btn; float: left;"] \
 			       [list type submit name flip \
@@ -470,11 +477,13 @@ if { !$read_p } {
 	    # Add the button choices as a form.
 	    set form_submitted_p 0
 	    set f_lol [list \
-			   [list type hidden name stack_id value ${stack_id} ] \
+			   [list type hidden name stack_id value ${stack_id} ] \			   [list type hidden name deck_id value ${deck_id} ] \
 			   [list type hidden name card_id value ${card_id} ] \
+			   [list type hidden name frompage value "backside"] \
+			   [list type hidden name page value "frontside"] \
 			   [list type submit name keep \
 				value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn; float: left;"] \
-			   [list type submit name flip \
+			   [list type submit name pop \
 				value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn; float: right;"] \
 			  ]
 	    
@@ -490,8 +499,11 @@ if { !$read_p } {
 
 	append content_html $form_html
 	set form_html ""
-	# adding exception for newdeck passing to frontside
-	if { $frompage eq "newdeck" } {
+	
+	# Each newdeck,frontside, and backside form doesn't use
+	# this level of input validation, so disable it
+	# was: $frompage eq "newdeck"
+	if { $mode in [list frontside backside] || $frompage eq "newdeck" } {
 	    set form_submitted_p 0
 	    set validated_p 0
 	}
