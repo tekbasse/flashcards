@@ -1,0 +1,4 @@
+These are notes about things to do when installing flashcards package.
+
+for oacs-5-9+, remove the dangling </table> tag from packages/acs-tcl/lib/progress-bar.adp
+
