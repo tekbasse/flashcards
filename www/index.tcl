@@ -84,9 +84,10 @@ if { !$read_p } {
             # from index (where both are referred to as stack_id in
             # the radio buttons.
             # This fixes stack_id/deck_id misassignments
-            ns_log Notice "/flashcards/index.260 stack_id '${stack_id}'"
+            ns_log Notice "/flashcards/index.87 stack_id '${stack_id}'"
             set stack_id_orig $stack_id
-            set maybe_deck_id_p [db_0or1row flc_user_stats_r5 { select stack_id, deck_id
+            set maybe_deck_id_p [db_0or1row flc_user_stats_r5 {
+                select stack_id, deck_id
                 from flc_user_stats where
                 ( deck_id=:stack_id or
                   stack_id=:stack_id ) and
@@ -99,7 +100,7 @@ if { !$read_p } {
                 # remove dangling id
                 set deck_id ""
             }
-            ns_log Notice "/flashcards/index.267 stack_id '${stack_id}' deck_id '${deck_id}' maybe_deck_id_p '$maybe_deck_id_p'"
+            ns_log Notice "/flashcards/index.103 stack_id '${stack_id}' deck_id '${deck_id}' maybe_deck_id_p '$maybe_deck_id_p'"
         }
 
         # frontside and backside require deck_id and card_id
@@ -492,6 +493,7 @@ if { !$read_p } {
             set form_submitted_p 0
             set f_lol [list \
                            [list type hidden name stack_id value ${stack_id} ] \
+                           [list type hidden name deck_id value ${deck_id} ] \
                            [list type hidden name card_id value ${card_id} ] \
                            [list type hidden name frompage value "backside"] \
                            [list type hidden name page value "frontside"] \
@@ -517,7 +519,7 @@ if { !$read_p } {
         # Each newdeck,frontside, and backside form doesn't use
         # this level of input validation, so disable it
         # was: $frompage eq "newdeck"
-        if { $mode in [list frontside backside] || $frompage eq "newdeck" } {
+        if { $mode in [list index frontside backside] || $frompage eq "newdeck" } {
             set form_submitted_p 0
             set validated_p 0
         }
