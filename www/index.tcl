@@ -289,7 +289,7 @@ if { !$read_p } {
 			   [list type hidden name deck_id value ${deck_id} ] \
 			   [list type hidden name page value "frontside" ] \
 			   [list type hidden name frompage value $frompage ] \
-			   [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "class: btn-big; float: left;"] \
+			   [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "float: left;" class "btn-big"] \
 			      ]
 	    ns_log Notice "flashcards/www/index.tcl.281 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
 	}
@@ -374,11 +374,11 @@ if { !$read_p } {
 		order by order_id asc limit 1 } ]
 	    if { !$card_id_exists_p } {
 		append content_html {
-		    <div style="align:center;"><p><strong>\#Done_Congratulations_\#</strong></p></div>}
+		    <div style="align:center;"><p><strong>#flashcards.Done_Congratulations_#</strong></p></div>}
 		set f_lol [list \
 			   [list type hidden name page value "index" ] \
 			   [list type hidden name frompage value "frontside" ] \
-			   [list type submit name submit value "\#flashcards.Finished\#" datatype text label "" style "class: btn-big; float: left;"] \
+			   [list type submit name submit value "\#flashcards.Finished\#" datatype text label "" style "float: left;" class "btn-big" ] \
 
 			       ]
 	    } else {
@@ -437,9 +437,9 @@ if { !$read_p } {
 			       [list type hidden name front_title value "$card_title_arr(${front_ref})" ] \
 			       [list type hidden name frompage value "frontside"] \
 			       [list type submit name skip \
-				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "class: btn-big; float: left;"] \
+				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "float: left;" class "btn-big" ] \
 			       [list type submit name flip \
-				    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "class: btn-big; float: right;"] \
+				    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "float: right;" class "btn-big" ] \
 			      ]
 		append content_part2_html "</div></div>"
 	    }
@@ -492,11 +492,11 @@ if { !$read_p } {
 			   [list type hidden name frompage value "backside"] \
 			   [list type hidden name page value "frontside"] \
 			   [list type submit name keep \
-				value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn-big; float: left;"] \
+				value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "float: left;" class "btn-big"] \
 			   [list type submit name pop \
-				value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn-big; float: right;"] \
+				value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "float: right;" class "btn-big" ] \
 			  ]
-	    
+	    append content_part2_html "</div></div>"
 	}
     }
 
