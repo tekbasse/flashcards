@@ -152,6 +152,9 @@ if { !$read_p } {
             # for new ones, and for user history cases that are not complete.
             # with a start button
 
+            #TODO THe radio button should default to the most recent created
+            # deck from flc_user_stats
+            
             set active_lol [db_list_of_lists flc_user_stats_r {
                 select stack_id,
                 time_start,
@@ -298,6 +301,7 @@ if { !$read_p } {
                            [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "float: left;" class "btn-big"] \
                           ]
             ns_log Notice "flashcards/www/index.tcl.281 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
+
         }
         frontside {
             
@@ -333,7 +337,39 @@ if { !$read_p } {
                     deck_id=:deck_id and
                     card_id=:card_id and
                     user_id=:user_id }
+                # update flc_user_stats
+                db_1row flc_card_stack_r21 {
+                    select card_count as total_card_count
+                    from flc_card_stack where
+                    stack_id=:stack_id and
+                    instance_id=:instance_id }
+                    
+                db_1row flc_user_stack_r10 {
+                    select sum(view_count) as sum_view_count
+                    from flc_user_stack where
+                    deck_id=:deck_id and
+                    user_id=:user_id and
+                    instance_id=:instance_id }
+                db_1row flc_user_stack_r12 {
+                    select count(card_id) as cards_completed_count
+                    from flc_user_stack where
+                    done_p='t' and
+                    deck_id=:deck_id and
+                    user_id=:user_id and
+                    instance_id=:instance_id }
+                set repeats_count [expr { $sum_view_count - $total_card_count } ]
+                set cards_remaing_count [expr { $total_card_count - $cards_completed_count } ]
+
+                db_dml flc_user_stack_u6 { update flc_user_stats
+                    set cards_remaining_count=:cards_remaing_count,
+                    cards_completed_count=:cards_completed_count,
+                    repeats_count=:repeats_count where
+                    user_id=:user_id and
+                    instance_id=:instance_id and
+                    deck_id=:deck_id }
+
             }
+            
             if { $keep_p } {
                 # Put the card back in the deck, in a random place.
                 # Get current order_id 
@@ -379,6 +415,29 @@ if { !$read_p } {
                 ( done_p!='t' or done_p is null )
                 order by order_id asc limit 1 } ]
             if { !$card_id_exists_p } {
+                set time_end [qf_clock_format [clock seconds]]
+                db_1row flc_card_stack_r23 {
+                    select card_count as total_card_count
+                    from flc_card_stack where
+                    stack_id=:stack_id and
+                    instance_id=:instance_id }
+
+                db_1row flc_user_stack_r11 {
+                    select sum(view_count) as sum_view_count
+                    from flc_user_stack where
+                    deck_id=:deck_id and
+                    user_id=:user_id and
+                    instance_id=:instance_id }
+                set repeats_count [expr { $sum_view_count - $total_card_count } ]
+                db_dml flc_user_stack_u3 { update flc_user_stats
+                    set time_end=:time_end,
+                    cards_remaining_count='0',
+                    cards_completed_count=:total_card_count,
+                    repeats_count=:repeats_count where
+                    user_id=:user_id and
+                    instance_id=:instance_id and
+                    deck_id=:deck_id }
+                
                 append content_html {
                     <div style="align:center;"><p><strong>#flashcards.Done_Congratulations_#</strong></p></div>}
                 set f_lol [list \
