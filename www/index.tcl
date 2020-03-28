@@ -412,15 +412,15 @@ if { !$read_p } {
 		#    user options: skip/pass 
 		#                  flip (to see backside) via form
 
-		append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box;\">"
-		append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
+		append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
+		append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap:normal;\">"
 		append content_html "<pre>\#flashcards.Frontside\#</pre>"
 		append content_html "<p>$card_title_arr(${front_ref})</p>\n"
 		append content_html "<p><strong>$content_arr(${front_ref})</strong></p>"
 		append content_html "<br><br>"
 		append content_html "</div>"
 		append content_html "<br><br>"
-		append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
+		append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap:normal;\">"
 		append content_html "<pre>\#flashcards.Backside\#</pre>"
 		append content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
 		append content_html "<p><em>\#flashcards.Flip_over_to_see\#</em></p>"
@@ -468,14 +468,14 @@ if { !$read_p } {
 	    # via mode: frontside
 	    
 	    append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
-	    append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
+	    append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap:normal;\">"
 	    append content_html "<pre>\#flashcards.Frontside\#</pre>"
 	    append content_html "<p>${front_title}</p>\n"
 	    append content_html "<p><strong>${front_value}</strong></p>"
 	    append content_html "<br><br>"
 	    append content_html "</div>"
 	    append content_html "<br><br>"
-	    append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
+	    append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap:normal;\">"
 	    append content_html "<pre>\#flashcards.Backside\#</pre>"
 	    append content_html "<p>${back_title}</p>"
 	    append content_html "<p><strong>${back_value}</strong></p>"
