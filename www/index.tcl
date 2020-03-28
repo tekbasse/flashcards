@@ -252,6 +252,7 @@ if { !$read_p } {
         }
         newdeck {
             ns_log Notice "flashcards/www/index.tcl.237 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
+            
             ad_progress_bar_begin -title "Making a shuffled deck" -message_1 "Shuffling..." -message_2 "Please wait.. Page will continue loading momentarily.."
             # Start a new deck.
             #wrap in db_transaction
@@ -296,8 +297,6 @@ if { !$read_p } {
                            [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "float: left;" class "btn-big"] \
                           ]
             ns_log Notice "flashcards/www/index.tcl.281 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
-            append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
-            append content_part2_html "</div>"
         }
         frontside {
             

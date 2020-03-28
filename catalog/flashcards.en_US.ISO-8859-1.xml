@@ -2,6 +2,7 @@
 <message_catalog package_key="flashcards" package_version="0.1d" locale="en_US" charset="ISO-8859-1">
   <msg key="Abbreviation">Abbreviation</msg>
   <msg key="Backside">Backside</msg>
+  <msg key="Choose_a_deck">Choose a deck.</msg>
   <msg key="Card">Card</msg>
   <msg key="Cards">Cards</msg>
   <msg key="Completed">Completed</msg>
@@ -27,6 +28,7 @@
   <msg key="Skip__pass">Skip / Pass. Put card back into deck.</msg>
   <msg key="Stack">Stack</msg>
   <msg key="Start">Start</msg>
+  <msg key="Start_reading_flashcards_">Start reading flashcards.</msg>
   <msg key="Started">Started</msg>
   <msg key="Term">Term</msg>
   <msg key="abbreviation">abbreviation</msg>
