@@ -1,3 +1,4 @@
+ns_log Notice "/flashcards/www/index.tcl New page start   * * * * * * * * * *"
 set title "#flashcards.Flashcards#"
 set context [list $title]
 set user_id [ad_conn user_id]
@@ -43,10 +44,10 @@ if { !$read_p } {
     set f_lol [list ]
     
     set form_submitted_p [qf_get_inputs_as_array input_array]
-    	ns_log Notice "flashcards/www/index.tcl.42 input_array '[array get input_array ]"
+    	ns_log Notice "flashcards/www/index.tcl.47 input_array '[array get input_array ]"
     if { $form_submitted_p } {
 	# Get possible inputs
-	ns_log Notice "flashcards/www/index.tcl.45 input_array '[array get input_array ]"
+	ns_log Notice "flashcards/www/index.tcl.50 input_array '[array get input_array ]"
 	if { [qf_is_natural_number $input_array(stack_id) ] } {
 	    set stack_id $input_array(stack_id)
 	}
@@ -75,28 +76,31 @@ if { !$read_p } {
 	    set keep_p 1
 	}
 	
-	# First we must determine if stack_id is a stack_id or deck_id
-	# from index (where both are referred to as stack_id in
-	# the radio buttons.
-	# This fixes stack_id/deck_id misassignments
-	ns_log Notice "/flashcards/index.260 stack_id '${stack_id}'"
-	set stack_id_orig $stack_id
-	db_1row flc_user_stats_r5 { select stack_id, deck_id
-	    from flc_user_stats where
-	    ( deck_id=:stack_id or
-	      stack_id=:stack_id ) and
-	    user_id=:user_id and
-	    instance_id=:instance_id limit 1 }
-	if { $stack_id == $stack_id_orig } {
-	    # remove dangling id
-	    set deck_id ""
+	if { $deck_id eq "" && $stack_id ne "" } {
+	    # First we must determine if stack_id is a stack_id or deck_id
+	    # from index (where both are referred to as stack_id in
+	    # the radio buttons.
+	    # This fixes stack_id/deck_id misassignments
+	    ns_log Notice "/flashcards/index.260 stack_id '${stack_id}'"
+	    set stack_id_orig $stack_id
+	    db_1row flc_user_stats_r5 { select stack_id, deck_id
+		from flc_user_stats where
+		( deck_id=:stack_id or
+		  stack_id=:stack_id ) and
+		user_id=:user_id and
+		instance_id=:instance_id limit 1 }
+	    if { $stack_id == $stack_id_orig } {
+		# remove dangling id
+		set deck_id ""
+	    }
+	    ns_log Notice "/flashcards/index.267 stack_id '${stack_id}' deck_id '${deck_id}'"
 	}
-	ns_log Notice "/flashcards/index.267 stack_id '${stack_id}' deck_id '${deck_id}'"
+
 	# frontside and backside require deck_id and card_id
 	# newdeck requires stack_id
 	# index requires neither
 	
-	ns_log Notice "/flashcards/index.tcl.77 skip_p '$skip_p' flip_p '$flip_p' pop_p '$pop_p' keep_p '$keep_p' page '$page' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
+	ns_log Notice "/flashcards/index.tcl.100 skip_p '$skip_p' flip_p '$flip_p' pop_p '$pop_p' keep_p '$keep_p' page '$page' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
 	
 	# Determine if displaying front or back side of card.
 	# and mode of display. ie
@@ -108,14 +112,14 @@ if { !$read_p } {
 		set mode "newdeck"
 		if { $frompage eq $mode } {
 		    set mode "frontside"
-		    ns_log Warning "/flashcards/index.tcl.111 Tried to assign a newdeck to a newdeck. Re-assigning to 'frontside'"
+		    ns_log Warning "/flashcards/index.tcl.112 Tried to assign a newdeck to a newdeck. Re-assigning to 'frontside'"
 		}
 	    }
 	} elseif { $flip_p && $card_id ne "" && $deck_id ne "" } {
 	    set mode "backside"
 	}
     }
-    ns_log Notice "flashcards/www/index.tcl.88: mode '${mode}' "
+    ns_log Notice "flashcards/www/index.tcl.119: mode '${mode}' "
     
     # Common to more than one mode:
     set stacks_lol [db_list_of_lists flc_card_stack_r {
@@ -130,6 +134,7 @@ if { !$read_p } {
 
 
     # implement mode via switch, which sets  up page and parameters for form.
+    ns_log Notice "/flashcards/www/index.tcl.134 start $mode"
     switch -exact -- $mode {
 	index {
 
@@ -167,7 +172,7 @@ if { !$read_p } {
 		}
 	    }
 	    if {  [llength $active_lol] > 0 } {
-		ns_log Notice "/flashcards/index.tcl.142 active_lol '$active_lol'"
+		ns_log Notice "/flashcards/index.tcl.172 active_lol '$active_lol'"
 		#  add unfinished cases to attr_lol
 		foreach active_list $active_lol {
 		    lassign $active_list s_id time_start deck_id cards_completed_count
@@ -232,40 +237,38 @@ if { !$read_p } {
 	    
 	}
 	newdeck {
-	    ns_log Notice "flashcards/www/index.tcl.194 stack_id '$stack_id' deck_id '$deck_id' instance_id '$instance_id' user_id '$user_id'"
-	    if { $stack_id ne "" && $deck_id eq "" } {
-		ad_progress_bar_begin -title "Making a shuffled deck" -message_1 "Shuffling..." -message_2 "Please wait.. Page will continue loading momentarily.."
-		# Start a new deck.
-		#wrap in db_transaction
-		set deck_id [db_nextval flc_id_seq]
-		# Populate flc_user_stack
-		# get/shuffle list of card_id
-		set card_id_list [db_list flc_card_stack_card_rN5 {
-		    select card_id from flc_card_stack_card
-		    where instance_id=:instance_id and
-		    stack_id=:stack_id} ]
-		set card_id_shuffled_list [acc_fin::shuffle_list $card_id_list ]
-		# then:
-		set order_id 0
-		set count 1
-		set factor [llength $card_id_shuffled_list ]
-		foreach card_id $card_id_shuffled_list {
-		    db_dml flc_user_stack_c3 { insert into flc_user_stack
-			(deck_id,card_id,order_id,instance_id,user_id)
-			values (:deck_id,:card_id,:order_id,:instance_id,:user_id)
-		    }
-		    incr order_id $factor
-		    incr count
+	    ns_log Notice "flashcards/www/index.tcl.237 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
+	    ad_progress_bar_begin -title "Making a shuffled deck" -message_1 "Shuffling..." -message_2 "Please wait.. Page will continue loading momentarily.."
+	    # Start a new deck.
+	    #wrap in db_transaction
+	    set deck_id [db_nextval flc_id_seq]
+	    # Populate flc_user_stack
+	    # get/shuffle list of card_id
+	    set card_id_list [db_list flc_card_stack_card_rN5 {
+		select card_id from flc_card_stack_card
+		where instance_id=:instance_id and
+		stack_id=:stack_id} ]
+	    set card_id_shuffled_list [acc_fin::shuffle_list $card_id_list ]
+	    # then:
+	    set order_id 0
+	    set count 1
+	    set factor [llength $card_id_shuffled_list ]
+	    foreach card_id $card_id_shuffled_list {
+		db_dml flc_user_stack_c3 { insert into flc_user_stack
+		    (deck_id,card_id,order_id,instance_id,user_id)
+		    values (:deck_id,:card_id,:order_id,:instance_id,:user_id)
 		}
-		# Populate flc_user_stats
-		set time_start [qf_clock_format [clock seconds]]
-		db_dml flc_user_stats_c3 { insert into flc_user_stats
-		    (stack_id,deck_id,time_start,cards_completed_count,cards_remaining_count,user_id,instance_id)
-		    values (:stack_id,:deck_id,:time_start,'0',:count,:user_id,:instance_id)
-		    
-		}
-		set card_id [lindex $card_id_shuffled_list 0]
+		incr order_id $factor
+		incr count
 	    }
+	    # Populate flc_user_stats
+	    set time_start [qf_clock_format [clock seconds]]
+	    db_dml flc_user_stats_c3 { insert into flc_user_stats
+		(stack_id,deck_id,time_start,cards_completed_count,cards_remaining_count,user_id,instance_id)
+		values (:stack_id,:deck_id,:time_start,'0',:count,:user_id,:instance_id)
+		
+	    }
+	    set card_id [lindex $card_id_shuffled_list 0]
 
 	    set frompage newdeck
 	    #ad_returnredirect "/flashcards/index?card_id=${card_id}&stack_id=${stack_id}&deck_id=${deck_id}&page=${page}&frompage=${frompage}"
@@ -278,13 +281,13 @@ if { !$read_p } {
 			   [list type hidden name frompage value $frompage ] \
 			   [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "class: btn; float: left;"] \
 			      ]
-
+	    ns_log Notice "flashcards/www/index.tcl.281 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
 	}
 	frontside {
 		
 	    # increase view_count
 	    set view_count ""
-	    ns_log Notice "flashcards/www/index.tcl.259 instance_id '$instance_id' user_id '$user_id' deck_id '$deck_id' card_id '$card_id'"
+	    ns_log Notice "flashcards/www/index.tcl.289 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
 	    db_1row flc_user_stack_r4 { select view_count
 		from flc_user_stack where
 		instance_id=:instance_id and
@@ -478,10 +481,10 @@ if { !$read_p } {
 	}
     }
 
-
+    ns_log Notice "/flashcards/www/index.tcl.483 build form"
     # build form
     # if f_lol, is empty, skip building a form.
-    ns_log Notice "/flashcards/www/index.tcl.442 f_lol '${f_lol}'"
+    ns_log Notice "/flashcards/www/index.tcl.486 f_lol '${f_lol}'"
     if { [llength $f_lol ] > 0 } {
 	#  append form_html if it already exists.
 
