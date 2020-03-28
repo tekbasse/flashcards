@@ -136,7 +136,7 @@ if { !$read_p } {
         select stack_id, content_id, name, description, card_count
         from flc_card_stack
         where instance_id=:instance_id
-        order by stack_id asc } ]
+        order by stack_id desc } ]
 
     set card_title_arr(a) "\#flashcards.Abbreviation\#"
     set card_title_arr(t) "\#flashcards.Term\#"
@@ -152,8 +152,8 @@ if { !$read_p } {
             # for new ones, and for user history cases that are not complete.
             # with a start button
 
-            #TODO THe radio button should default to the most recent created
-            # deck from flc_user_stats
+            # The radio button defaults to the most recent created
+            # deck from flc_user_stats, otherwise from flc_card_stack
             
             set active_lol [db_list_of_lists flc_user_stats_r {
                 select stack_id,
@@ -165,12 +165,18 @@ if { !$read_p } {
                 and user_id=:user_id
                 and time_end is null
                 order by time_start desc } ]
+            set default_deck_id [lindex [lindex $active_lol 0] 2]
 
+                
+                
             # Make this a radio list:
             set carddeck_lol [list ]
             set attr_lol [list ]
             if { [llength $stacks_lol] > 0 } {
-
+                if { $default_deck_id eq "" } {
+                    set default_deck_id [lindex [lindex $stacks_lol 0] 0]
+                }
+                    
                 foreach stack_list $stacks_lol {
                     lassign $stack_list s_id c_id name_arr(${s_id}) descr_arr(${s_id}) card_ct_arr(${s_id})
                     # Make a radio list item with a label
@@ -181,6 +187,9 @@ if { !$read_p } {
                     set row_list [list \
                                       value ${s_id} label \
                                       "$name_arr(${s_id})(ref${s_id}): $descr_arr(${s_id})" ]
+                    if { $s_id eq $default_deck_id } {
+                        lappend row_list selected 1
+                    }
                     lappend attr_lol $row_list
                 }
             }
@@ -190,6 +199,10 @@ if { !$read_p } {
                 foreach active_list $active_lol {
                     lassign $active_list s_id time_start deck_id cards_completed_count
                     set row_list [list value ${deck_id} label "$name_arr(${s_id})(ref${deck_id}): Started ${time_start}, Done: (${cards_completed_count}/$card_ct_arr(${s_id}))" ]
+                    if { $deck_id eq $default_deck_id } {
+                        lappend row_list selected 1
+                    }
+                    
                     lappend attr_lol $row_list
                 }
             }
@@ -308,25 +321,27 @@ if { !$read_p } {
             # increase view_count
             set view_count ""
             ns_log Notice "flashcards/www/index.tcl.289 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
-            db_1row flc_user_stack_r4 { select view_count
+            set not_done_p [db_0or1row flc_user_stack_r4 {
+                select view_count
                 from flc_user_stack where
                 instance_id=:instance_id and
                 user_id=:user_id and
                 deck_id=:deck_id and
                 card_id=:card_id and
-                (done_p !='t' or done_p is null) }
-            if { $view_count eq "" } {
-                set view_count 0
+                (done_p !='t' or done_p is null) } ]
+            if { $not_done_p } {
+                if { $view_count eq "" } {
+                    set view_count 0
+                }
+                incr view_count
+                db_dml flc_user_stack_u0 { update flc_user_stack
+                    set view_count=:view_count where
+                    instance_id=:instance_id and
+                    user_id=:user_id and
+                    deck_id=:deck_id and
+                    card_id=:card_id and
+                    ( done_p !='t' or done_p is null) }
             }
-            incr view_count
-            db_dml flc_user_stack_u0 { update flc_user_stack
-                set view_count=:view_count where
-                instance_id=:instance_id and
-                user_id=:user_id and
-                deck_id=:deck_id and
-                card_id=:card_id and
-                ( done_p !='t' or done_p is null) }
-            
             # If there is a 'pop' or 'keep' answer from backside,
             # record it before rendering next frontside page.
             if { $pop_p } {
@@ -395,7 +410,7 @@ if { !$read_p } {
                 # choose a random number inbetween
                 set order_diff [expr { $order_id_last - $order_id } ]
                 set order_id_new [randomRange $order_diff]
-                incr order_id_new
+                incr order_id_new $order_id_last
                 # assign current card to new number
                 db_dml flc_user_stack_u2 { update flc_user_stack
                     set order_id=:order_id_new where
