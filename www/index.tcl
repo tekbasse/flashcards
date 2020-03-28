@@ -86,17 +86,20 @@ if { !$read_p } {
 	    # This fixes stack_id/deck_id misassignments
 	    ns_log Notice "/flashcards/index.260 stack_id '${stack_id}'"
 	    set stack_id_orig $stack_id
-	    db_1row flc_user_stats_r5 { select stack_id, deck_id
+	    set maybe_deck_id_p [db_0or1row flc_user_stats_r5 { select stack_id, deck_id
 		from flc_user_stats where
 		( deck_id=:stack_id or
 		  stack_id=:stack_id ) and
 		user_id=:user_id and
-		instance_id=:instance_id limit 1 }
+		instance_id=:instance_id limit 1 } ]
+
+	    # if !$maybe_deck_id_p then must be stack_id, do nothing
+		
 	    if { $stack_id == $stack_id_orig } {
 		# remove dangling id
 		set deck_id ""
 	    }
-	    ns_log Notice "/flashcards/index.267 stack_id '${stack_id}' deck_id '${deck_id}'"
+	    ns_log Notice "/flashcards/index.267 stack_id '${stack_id}' deck_id '${deck_id}' maybe_deck_id_p '$maybe_deck_id_p'"
 	}
 
 	# frontside and backside require deck_id and card_id
@@ -109,7 +112,7 @@ if { !$read_p } {
 	# and mode of display. ie
 	# Determine mode, set mode to: index, frontside, backside, or newdeck
 	if { $skip_p || $pop_p || $keep_p || $page eq "frontside"  } {
-	    if { $deck_id ne "" && $card_id ne "" } {
+	    if { $deck_id ne "" } {
 		set mode "frontside"
 	    } else {
 		set mode "newdeck"
@@ -286,7 +289,7 @@ if { !$read_p } {
 			   [list type hidden name deck_id value ${deck_id} ] \
 			   [list type hidden name page value "frontside" ] \
 			   [list type hidden name frompage value $frompage ] \
-			   [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "class: btn; float: left;"] \
+			   [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "class: btn-big; float: left;"] \
 			      ]
 	    ns_log Notice "flashcards/www/index.tcl.281 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
 	}
@@ -372,6 +375,12 @@ if { !$read_p } {
 	    if { !$card_id_exists_p } {
 		append content_html {
 		    <div style="align:center;"><p><strong>\#Done_Congratulations_\#</strong></p></div>}
+		set f_lol [list \
+			   [list type hidden name page value "index" ] \
+			   [list type hidden name frompage value "frontside" ] \
+			   [list type submit name submit value "\#flashcards.Finished\#" datatype text label "" style "class: btn-big; float: left;"] \
+
+			       ]
 	    } else {
 		
 		# Get card data
@@ -402,15 +411,15 @@ if { !$read_p } {
 		# Build card view 
 		#    user options: skip/pass 
 		#                  flip (to see backside) via form
-		append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
-		append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
+		append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box;\">"
+		append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
 		append content_html "<pre>\#flashcards.Frontside\#</pre>"
 		append content_html "<p>$card_title_arr(${front_ref})</p>\n"
 		append content_html "<p><strong>$content_arr(${front_ref})</strong></p>"
 		append content_html "<br><br>"
 		append content_html "</div>"
 		append content_html "<br><br>"
-				append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
+		append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
 		append content_html "<pre>\#flashcards.Backside\#</pre>"
 		append content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
 		append content_html "<p><em>\#flashcards.Flip_over_to_see\#</em></p>"
@@ -427,9 +436,9 @@ if { !$read_p } {
 			       [list type hidden name front_title value "$card_title_arr(${front_ref})" ] \
 			       [list type hidden name frompage value "frontside"] \
 			       [list type submit name skip \
-				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "class: btn; float: left;"] \
+				    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "class: btn-big; float: left;"] \
 			       [list type submit name flip \
-				    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "class: btn; float: right;"] \
+				    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "class: btn-big; float: right;"] \
 			      ]
 		append content_part2_html "</div></div>"
 	    }
@@ -458,14 +467,14 @@ if { !$read_p } {
 	    # via mode: frontside
 	    
 	    append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
-	    append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
+	    append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
 	    append content_html "<pre>\#flashcards.Frontside\#</pre>"
 	    append content_html "<p>${front_title}</p>\n"
 	    append content_html "<p><strong>${front_value}</strong></p>"
 	    append content_html "<br><br>"
 	    append content_html "</div>"
 	    append content_html "<br><br>"
-	    append content_html "<div style=\"border:solid; border-width:1px; padding: 1px; margin: 2px; width: 100%\">"
+	    append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
 	    append content_html "<pre>\#flashcards.Backside\#</pre>"
 	    append content_html "<p>${back_title}</p>"
 	    append content_html "<p><strong>${back_value}</strong></p>"
@@ -482,9 +491,9 @@ if { !$read_p } {
 			   [list type hidden name frompage value "backside"] \
 			   [list type hidden name page value "frontside"] \
 			   [list type submit name keep \
-				value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn; float: left;"] \
+				value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "class: btn-big; float: left;"] \
 			   [list type submit name pop \
-				value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn; float: right;"] \
+				value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "class: btn-big; float: right;"] \
 			  ]
 	    
 	}
