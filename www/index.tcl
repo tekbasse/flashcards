@@ -411,6 +411,7 @@ if { !$read_p } {
 		# Build card view 
 		#    user options: skip/pass 
 		#                  flip (to see backside) via form
+
 		append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box;\">"
 		append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; content-box; word-wrap:normal;\">"
 		append content_html "<pre>\#flashcards.Frontside\#</pre>"

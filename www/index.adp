@@ -11,3 +11,5 @@
 
 
 @content_html;noquote@
+<div style="float:none;"></div>
+<div style="clear: both;"></div>
