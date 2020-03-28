@@ -337,6 +337,8 @@ if { !$read_p } {
                     deck_id=:deck_id and
                     card_id=:card_id and
                     user_id=:user_id }
+            }
+            if { $pop_p || $skip_p } {
                 # update flc_user_stats
                 db_1row flc_card_stack_r21 {
                     select card_count as total_card_count
@@ -370,7 +372,8 @@ if { !$read_p } {
 
             }
             
-            if { $keep_p } {
+            
+            if { $keep_p || $skip_p } {
                 # Put the card back in the deck, in a random place.
                 # Get current order_id 
                 db_1row flc_user_stack_r6 { select order_id
