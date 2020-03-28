@@ -199,7 +199,7 @@ if { !$read_p } {
                 
                 set row_list [list type radio name stack_id value $attr_lol ]
                 lappend f_lol $row_list
-                set row_list [list type submit name start value "\#flashcards.Start\#" datatype text label "" title "\#flashcards.Start_reading_flashcards_\#" class "btn-big"]
+                set row_list [list type submit name start value "\#flashcards.Start\#" datatype text label "" title "\#flashcards.Start_reading_flashcards_\#" class "btn-big" style "padding: 35px;"]
                 lappend f_lol $row_list
                 set row_list [list type hidden name frompage value index ]
                 set row_list [list type hidden name page value frontside ]
@@ -298,7 +298,7 @@ if { !$read_p } {
                            [list type hidden name deck_id value ${deck_id} ] \
                            [list type hidden name page value "frontside" ] \
                            [list type hidden name frompage value $frompage ] \
-                           [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "float: left;" class "btn-big"] \
+                           [list type submit name submit value "\#flashcards.Start\#" datatype text label "" style "float: left;padding: 35px;" class "btn-big"] \
                           ]
             ns_log Notice "flashcards/www/index.tcl.281 instance_id '$instance_id' user_id '$user_id' stack_id '$stack_id' deck_id '$deck_id' card_id '$card_id'"
 
@@ -446,7 +446,7 @@ if { !$read_p } {
                 set f_lol [list \
                                [list type hidden name page value "index" ] \
                                [list type hidden name frompage value "frontside" ] \
-                               [list type submit name submit value "\#flashcards.Finished\#" datatype text label "" style "float: left;" class "btn-big" ] \
+                               [list type submit name submit value "\#flashcards.Finished\#" datatype text label "" style "float: left;padding: 35px;" class "btn-big" ] \
                               ]
             } else {
                 
@@ -504,9 +504,9 @@ if { !$read_p } {
                                [list type hidden name front_title value "$card_title_arr(${front_ref})" ] \
                                [list type hidden name frompage value "frontside"] \
                                [list type submit name skip \
-                                    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "float: left;" class "btn-big" ] \
+                                    value "\#flashcards.Skip\#" datatype text title "\#flashcards.Skip__pass\#" label "" style "float: left;padding: 35px;" class "btn-big" ] \
                                [list type submit name flip \
-                                    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "float: right;" class "btn-big" ] \
+                                    value "\#flashcards.Flip\#" datatype text title "\#flashcards.Flip_over\#" label "" style "float: right;padding: 35px;" class "btn-big" ] \
                               ]
                 append content_part2_html "</div></div>"
             }
@@ -560,9 +560,9 @@ if { !$read_p } {
                            [list type hidden name frompage value "backside"] \
                            [list type hidden name page value "frontside"] \
                            [list type submit name keep \
-                                value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "float: left;" class "btn-big"] \
+                                value "\#flashcards.Keep\#" datatype text title "\#flashcards.Keep_in_stack\#" label "" style "float: left;padding: 35px;" class "btn-big"] \
                            [list type submit name pop \
-                                value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "float: right;" class "btn-big" ] \
+                                value "\#flashcards.Pop\#" datatype text title "\#flashcards.Pop_from_stack\#" label "" style "float: right;padding: 35px;" class "btn-big" ] \
                           ]
             append content_part2_html "</div></div>"
         }
