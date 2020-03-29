@@ -354,6 +354,7 @@ if { !$read_p } {
                     user_id=:user_id }
             }
             if { $pop_p || $skip_p } {
+
                 # update flc_user_stats
                 db_1row flc_card_stack_r21 {
                     select card_count as total_card_count
@@ -375,8 +376,8 @@ if { !$read_p } {
                     user_id=:user_id and
                     instance_id=:instance_id }
                 set repeats_count [expr { $sum_view_count - $total_card_count } ]
+               
                 set cards_remaing_count [expr { $total_card_count - $cards_completed_count } ]
-
                 db_dml flc_user_stack_u6 { update flc_user_stats
                     set cards_remaining_count=:cards_remaing_count,
                     cards_completed_count=:cards_completed_count,
@@ -384,11 +385,11 @@ if { !$read_p } {
                     user_id=:user_id and
                     instance_id=:instance_id and
                     deck_id=:deck_id }
-
             }
             
             
             if { $keep_p || $skip_p } {
+
                 # Put the card back in the deck, in a random place.
                 # Get current order_id 
                 db_1row flc_user_stack_r6 { select order_id
