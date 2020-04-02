@@ -3,10 +3,10 @@ set title "#flashcards.Flashcards#"
 set context [list $title]
 set user_id [ad_conn user_id]
 set instance_id [ad_conn package_id]
-set read_p [permission::permission_p \
+set write_p [permission::permission_p \
                 -party_id $user_id \
                 -object_id $instance_id \
-                -privilege read]
+                -privilege write]
 
 set error_p 0
 # adp required values for all cases
@@ -23,7 +23,7 @@ set frompage_mode_list $page_mode_list
 # Sometimes a switch will have be determined based on the input
 # from the frompage, so page with be empty in those cases.
 
-if { !$read_p } {
+if { !$write_p } {
     append content_html "\#flashcards.permission_denied\#"
 } else {
     
@@ -494,20 +494,20 @@ if { !$read_p } {
                 # Build card view 
                 #    user options: skip/pass 
                 #                  flip (to see backside) via form
-
-                append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
-                append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap:normal;\">"
-                append content_html "<pre>\#flashcards.Frontside\#</pre>"
+		regsub -all -nocase -- {&nbsp;} $content_arr(${front_ref}) { } content_front
+                append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">\n"
+                append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap: normal;\">\n"
+                append content_html "<pre>\#flashcards.Frontside\#</pre>\n"
                 append content_html "<p>$card_title_arr(${front_ref})</p>\n"
-                append content_html "<p><strong>$content_arr(${front_ref})</strong></p>"
+                append content_html "<p><strong>${content_front} </strong> </p>\n"
                 append content_html "<br><br>"
-                append content_html "</div>"
+                append content_html "</div>\n"
                 append content_html "<br><br>"
-                append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap:normal;\">"
+                append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap: normal;\">\n"
                 append content_html "<pre>\#flashcards.Backside\#</pre>"
                 append content_html "<p><strong>$card_title_arr(${back_ref})</strong></p>"
                 append content_html "<p><em>\#flashcards.Flip_over_to_see\#</em></p>"
-                append content_html "</div>"
+                append content_html "</div>\n\n"
                 # Add the button choices as a form.
                 set f_lol [list \
                                [list type hidden name stack_id value ${stack_id} ] \
@@ -549,20 +549,25 @@ if { !$read_p } {
             #         stack_id, content_id, card_id, back_value, back_title, front_value, front_title
             # These values should already have been passed
             # via mode: frontside
-            
-            append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">"
-            append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap:normal;\">"
-            append content_html "<pre>\#flashcards.Frontside\#</pre>"
+
+	    # filter/convert unicode nonbreaking spaces that break in some
+	    # instances, into regular spaces so word-wrap works as expected.
+	    #regsub -all -nocase -- {\xc2\xa0} ${front_value} {x} content_front2
+	    regsub -all -- {\u00A0} $front_value " " content_front
+
+	    append content_html "<div class=\"l-grid-third padded\"><div class=\"padded-inner content-box\">\n"
+	    append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap: normal;\">\n"
+            append content_html "<pre>\#flashcards.Frontside\#</pre>\n"
             append content_html "<p>${front_title}</p>\n"
-            append content_html "<p><strong>${front_value}</strong></p>"
+            append content_html "<p><strong>${content_front}</strong> </p>\n"
             append content_html "<br><br>"
-            append content_html "</div>"
+            append content_html "</div>\n"
             append content_html "<br><br>"
-            append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap:normal;\">"
+            append content_html "<div style=\"border:solid; border-width:1px; padding: 4px; margin: 2px; width: 100%; word-wrap: normal;\">"
             append content_html "<pre>\#flashcards.Backside\#</pre>"
             append content_html "<p>${back_title}</p>"
             append content_html "<p><strong>${back_value}</strong></p>"
-            append content_html "</div>"
+            append content_html "</div>\n\n"
             
             #    user options:
             #                 Keep put/push back in stack
