@@ -17,7 +17,8 @@
         <maturity>0</maturity>
 
         <provides url="flashcards" version="5.01d"/>
-
+        <requires url="q-forms" version="0.001"/>
+        <requires url="spreadsheet" version="0.001"/>
         <callbacks>
         </callbacks>
         <parameters>
