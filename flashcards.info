@@ -9,15 +9,15 @@
     <implements-subsite-p>f</implements-subsite-p>
     <inherit-templates-p>f</inherit-templates-p>
     
-    <version name="5.01d" url="http://openacs.org/repository/download/apm/flashcards-5.01d.apm">
+    <version name="5.02d" url="http://openacs.org/repository/download/apm/flashcards-5.02d.apm">
         <owner url="mailto:tekbasse@yahoo.com">Benjamin BrInk</owner>
         <owner url="mailto:webmaster@openacs.org">OpenACS.org</owner>
         <summary>Flashcards for learning</summary>
         <description format="text/plain">Teams share terms. Flashcards are a way to re-enforce learning.</description>
         <maturity>0</maturity>
 
-        <provides url="flashcards" version="5.01d"/>
-        <requires url="q-forms" version="0.001"/>
+        <provides url="flashcards" version="5.02d"/>
+        <requires url="q-forms" version="0.560"/>
         <requires url="spreadsheet" version="0.001"/>
         <callbacks>
         </callbacks>

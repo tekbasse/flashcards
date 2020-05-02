@@ -607,7 +607,7 @@ if { !$write_p } {
             set validated_p 0
         }
         
-        ::qfo::form_list_def_to_array \
+        ::qfo::array_set_form_list \
             -list_of_lists_name f_lol \
             -fields_ordered_list_name qf_fields_ordered_list \
             -array_name f_arr \
