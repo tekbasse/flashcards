@@ -8,6 +8,7 @@ set title "Add Deck"
 set context [list $title]
 set content_html ""
 set user_message_list [list ]
+set reversable_p 0
 if { $admin_p } {
     set form_html ""
     set form_submitted_p [qf_get_inputs_as_array input_array]
@@ -15,6 +16,7 @@ if { $admin_p } {
         set content_dat $input_array(content_dat)
         set deck_name $input_array(name)
         set deck_description $input_array(description)
+        set reversable_p [info exists input_array(reversable_p) ]
     } else {
         append content_html {
             <p>Content data is expected to be three columns of data,
@@ -29,6 +31,7 @@ if { $admin_p } {
                    [list name name label "Deck name" datatype text_nonempty maxlength 40] \
                    [list name description label "Description" datatype text_nonempty] \
                    [list name content_dat label "Content data" datatype block_text] \
+                   [list name reversable_p label "Can cards be flipped over and used that way?" datatype boolean value $reversable_p ] \
                    [list type submit name submit value "\#acs-kernel.common_Save\#" datatype text_nonempty label "" ]
               ]
 
@@ -73,49 +76,54 @@ if { $admin_p } {
 		    # save content
 		    incr row_id
 		    db_dml flc_content_cr {insert into flc_content 
-			(row_id,content_id,instance_id,abbreviation,term,description)
-			values (:row_id,:content_id,:instance_id,:abbreviation,:term,:description)}
+                (row_id,content_id,instance_id,abbreviation,term,description)
+                values (:row_id,:content_id,:instance_id,:abbreviation,:term,:description)}
 		    
 		    # make cards from row
 		    if { $abbreviation ne "" && $term ne "" } {
-			incr card_id $rows_count
-			incr card_count 2
-			db_dml flc_card_stack_card_cr {insert into flc_card_stack_card
-			    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
-			    values (:card_id,:instance_id,:stack_id,:row_id,'a','t') }
-			incr card_id $rows_count
-			db_dml flc_card_stack_card_cr2 {insert into flc_card_stack_card
-			    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
-			    values (:card_id,:instance_id,:stack_id,:row_id,'t','a') }
-		    }
+                incr card_id $rows_count
+                incr card_count 2
+                db_dml flc_card_stack_card_cr {insert into flc_card_stack_card
+                    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
+                    values (:card_id,:instance_id,:stack_id,:row_id,'a','t') }
+                if { $reversable_p } {
+                    incr card_id $rows_count               
+                    db_dml flc_card_stack_card_cr2 {insert into flc_card_stack_card
+                        (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
+                        values (:card_id,:instance_id,:stack_id,:row_id,'t','a') }
+                }
+            }
+            
 		    if { $description ne "" && $term ne "" } {
-			incr card_id $rows_count
-			incr card_count 2
-			db_dml flc_card_stack_card_cr {insert into flc_card_stack_card
-			    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
-			    values (:card_id,:instance_id,:stack_id,:row_id,'t','d') }
-			incr card_id $rows_count
-			db_dml flc_card_stack_card_cr2 {insert into flc_card_stack_card
-			    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
-			    values (:card_id,:instance_id,:stack_id,:row_id,'d','t') }
-		    }
-			    
+                incr card_id $rows_count
+                incr card_count 2
+                db_dml flc_card_stack_card_cr {insert into flc_card_stack_card
+                    (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
+                    values (:card_id,:instance_id,:stack_id,:row_id,'t','d') }
+                if { $reversable_p } {
+                    incr card_id $rows_count
+                    db_dml flc_card_stack_card_cr2 {insert into flc_card_stack_card
+                        (card_id,instance_id,stack_id,row_id,front_ref,back_ref)
+                        values (:card_id,:instance_id,:stack_id,:row_id,'d','t') }
+                }
+            }
+            
 		}
-
+        
 		db_dml flc_card_stack_cr {insert into flc_card_stack
 		    (stack_id,content_id,instance_id,name,description,card_count)
 		    values (:stack_id,:content_id,:instance_id,:deck_name,:deck_description,:card_count) }
 		
-
-	    } on_error { set error_p 1 }
-	    if { $error_p } {
-		lappend user_message_list "There was an error importing data: '${errmsg}'"
-	    } else {
-		# cards are added in sets of two, representing either side facing first.
-		set flashcard_ct [expr { $card_count / 2 } ]
-		lappend user_message_list "Successfully imported ${rows_count} rows into ${flashcard_ct} flashcards."
-	    }
-
+        
+    } on_error { set error_p 1 }
+            if { $error_p } {
+                lappend user_message_list "There was an error importing data: '${errmsg}'"
+            } else {
+                # cards are added in sets of two, representing either side facing first.
+                set flashcard_ct [expr { $card_count / 2 } ]
+                lappend user_message_list "Successfully imported ${rows_count} rows into ${flashcard_ct} flashcards."
+            }
+            
             
         } else {
             lappend user_message_list "<pre>Hmm.. I can't parse this data. \n
