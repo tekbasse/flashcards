@@ -410,8 +410,8 @@ if { !$write_p } {
                     ( done_p!='t' or done_p is null ) }
                 # choose a random number inbetween
                 set order_diff [expr { $order_id_last - $order_id } ]
-                set order_id_new [randomRange $order_diff]
-                incr order_id_new $order_id_last
+                set order_id_new_rnd [util::random_range $order_diff]
+                set order_id_new [expr { $order_id_last + $order_id_new_rnd } ]
                 # assign current card to new number
                 db_dml flc_user_stack_u2 { update flc_user_stack
                     set order_id=:order_id_new where
