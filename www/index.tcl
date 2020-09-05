@@ -411,7 +411,15 @@ if { !$write_p } {
                 # choose a random number inbetween
                 set order_diff [expr { $order_id_last - $order_id } ]
                 set order_id_new_rnd [util::random_range $order_diff]
-                set order_id_new [expr { $order_id_last + $order_id_new_rnd } ]
+                set order_id_new [expr { $order_id + $order_id_new_rnd } ]
+		# db max integer is 2147483647
+		set rnd_counter 0
+		while { $order_id_new > 2147483646 } {
+		    ns_log Notice "flashcards/www/index.tcl.417 rnd_counter '${rnd_counter}' order_id_new '${order_id_new}' order_id_new_rnd '${order_id_new_rnd}' order_diff '${order_diff}'"
+		    set order_id_new_rnd [util::random_range $order_diff]
+		    set order_id_new [expr { $order_id + $order_id_new_rnd } ]
+		    incr rnd_counter
+		}
                 # assign current card to new number
                 db_dml flc_user_stack_u2 { update flc_user_stack
                     set order_id=:order_id_new where
